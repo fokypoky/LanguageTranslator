@@ -1,6 +1,8 @@
 ﻿using System.Text;
 using LanguageConsoleApp.Domain.Repositories.Implementation;
 using LanguageLib.Analyzers.Implementation;
+using LanguageLib.Errors.Implementation;
+
 namespace LanguageConsoleApp
 {
     public class Program
@@ -15,19 +17,30 @@ namespace LanguageConsoleApp
 
             if (lexer.ErrorsCount > 0)
             {
-                foreach (var lexerError in lexer.Errors)
+                Console.WriteLine("There are lexical errors\nPositions: ");
+                foreach (var error in lexer.Errors)
                 {
-                    Console.WriteLine(lexerError?.ToString());
+                    Console.Write(error.Position + " ");
                 }
 
                 return;
             }
 
-            foreach (var token in lexer.Tokens)
+            var syntaxAnalyzer = new SyntacticalAnalyzer(lexer.Tokens);
+            syntaxAnalyzer.Analyze();
+
+            if (syntaxAnalyzer.ErrorsCount > 0)
             {
-                Console.WriteLine(token.Value);
+                Console.WriteLine("There are syntax errors\nPositions: ");
+                foreach (var error in syntaxAnalyzer.Errors)
+                {
+                    Console.Write(error. Position + " ");
+                }
+
+                return;
             }
 
+            Console.WriteLine("OK");
         }
     }
 }
