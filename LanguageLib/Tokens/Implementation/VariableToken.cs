@@ -12,7 +12,9 @@ namespace LanguageLib.Tokens.Implementation
     {
         public TokenType Type { get; set; } = TokenType.Variable;
         public string Value { get; set; } = "";
-        public string Regex { get; set; } = @"^[A-Z|a-z][A-Z|a-z|0-9]*$";
+
+        public string Regex { get; set; } = @"[a-zA-Z][a-zA-Z0-9]*"; 
+        /*@"^[A-Z|a-z][A-Z|a-z|0-9]*$";*/
         public int Position { get; set; } = -1;
 
         public VariableToken()
@@ -21,7 +23,7 @@ namespace LanguageLib.Tokens.Implementation
 
         private VariableToken(string value, int position)
         {
-
+            Value = value;
             Position = position;
         }
 
