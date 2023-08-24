@@ -76,12 +76,10 @@ namespace LanguageLib.Analyzers.Implementation
                         continue;
                     }
 
-                    MakeToken(word, currentWordIndex);
+                    MakeToken(word, wordIndex);
                     currentWordIndex++;
                 }
             }
-
-            Tokens.RemoveAll(t => String.IsNullOrEmpty(t.Value));
         }
 
         private void PrepareText()
@@ -103,21 +101,17 @@ namespace LanguageLib.Analyzers.Implementation
 
         private void MakeToken(string word, int position)
         {
-            int oldTokensListCount = _testTokens.Count;
-
             foreach (var token in _testTokens)
             {
                 // first, second, third, fourth - определяются как переменные
                 if (token.IsMatch(word))
                 {
                     Tokens.Add(token.GetTokenObject(word, position));
+                    return;
                 }
             }
 
-            if (oldTokensListCount != _testTokens.Count)
-            {
-                Errors.Add(new LexicalError($"Слова {word} в языке не существует", position));
-            }
+            Errors.Add(new LexicalError($"Слова {word} в языке не существует", position));
         }
     }
 }
