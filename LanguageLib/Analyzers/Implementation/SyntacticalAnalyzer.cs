@@ -241,7 +241,6 @@ namespace LanguageLib.Analyzers.Implementation
                         secondWordSubTokens.Add(tokens[i]);
                     }
 
-
                     // проверка вещественных чисел россыпью
                     for (int i = 1; i < secondWordSubTokens.Count; i++)
                     {
@@ -251,7 +250,6 @@ namespace LanguageLib.Analyzers.Implementation
                             return false;
                         }
                     }
-                    
                 }
 
                 else if (token is ThirdToken)
@@ -270,7 +268,47 @@ namespace LanguageLib.Analyzers.Implementation
                         return false;
                     }
                 }
-                else if (token is FourthToken) { }
+                else if (token is FourthToken)
+                {
+                    // определение конца токена
+                    int fourthTokenEndIndex = -1;
+
+                    for (int i = tokenIndex; i < tokens.Count; i++)
+                    {
+                        var _token = tokens[i];
+                        if (i == tokens.Count - 1)
+                        {
+                            fourthTokenEndIndex = i;
+                            break;
+                        }
+
+                        if (_token is CommaToken)
+                        {
+                            fourthTokenEndIndex = i;
+                            break;
+                        }
+                    }
+
+                    // определение токенов после слова Fourth
+
+                    var fourthWordSubTokens = new List<IToken>();
+
+                    for (int i = tokenIndex; i <= fourthTokenEndIndex; i++)
+                    {
+                        fourthWordSubTokens.Add(tokens[i]);
+                    }
+
+                    // проверка вещественных чисел россыпью
+
+                    for (int i = 1; i < fourthWordSubTokens.Count; i++)
+                    {
+                        if (fourthWordSubTokens[i] is not IntegerToken)
+                        {
+                            Errors.Add(new SyntacticalError("Ожидалось целое число", fourthWordSubTokens[i].Position));
+                            return false;
+                        }
+                    }
+                }
             }
 
             return true;
