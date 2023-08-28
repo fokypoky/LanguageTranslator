@@ -8,8 +8,9 @@ using LanguageLib.Tokens.Interfaces;
 
 namespace LanguageLib.Tokens.Implementation
 {
-    public class VariableToken : IToken
+    public class VariableToken : IToken, IVariableToken
     {
+        public string Name { get; set; }
         public TokenType Type { get; set; } = TokenType.Variable;
         public string Value { get; set; } = "";
 
@@ -21,17 +22,18 @@ namespace LanguageLib.Tokens.Implementation
         {
         }
 
-        private VariableToken(string value, int position)
+        private VariableToken(string value, int position, string name)
         {
             Value = value;
             Position = position;
+            Name = name;
         }
 
         public bool IsMatch(string word) => System.Text.RegularExpressions.Regex.IsMatch(word, Regex);
         
         public IToken GetTokenObject(string value, int position = 0)
         {
-            return new VariableToken(value, position);
+            return new VariableToken(value, position, value);
         }
     }
 }
