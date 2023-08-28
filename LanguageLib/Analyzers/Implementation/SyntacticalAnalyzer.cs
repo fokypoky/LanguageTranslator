@@ -53,52 +53,59 @@ namespace LanguageLib.Analyzers.Implementation
 
             #region first, second, third, fourth tokens
 
-            var linkToken = Tokens[1];
-            if (linkToken is not FirstToken && linkToken is not SecondToken && 
-                linkToken is not ThirdToken && linkToken is not FourthToken)
+            // TODO: проверить второе слово языка
+
+            if (Tokens[1] is not FirstToken && Tokens[1] is not SecondToken && Tokens[1] is not ThirdToken &&
+                Tokens[1] is not FourthToken)
             {
-                Errors.Add(new SyntacticalError("Второе слово не 'First', 'Second', 'Third', 'Fourth'", 1));
+                Errors.Add(new SyntacticalError("Второе слово не First, Second, Third, Fourth", 1));
+                return;
             }
-            else
+
+            // поиск токенов звена
+
+            int linkTokensEndIndex = -1;
+
+            for (int i = 1; i < Tokens.Count; i++)
             {
-                #region operator tokens begin finding
+                var token = Tokens[i];
 
-                int operatorTokenIndex = -1;
-                for (int i = 1; i < Tokens.Count; i++)
+                if ((i + 1) < Tokens.Count - 1 && token is IntegerToken && Tokens[i + 1] is ColonToken)
                 {
-                    var token = Tokens[i];
-
-                    // оператор = </Метка ":"/> Переменная ...
-                    if (token is VariableToken)
-                    {
-                        operatorTokenIndex = i;
-                        break;
-                    }
+                    break;
                 }
 
-                #endregion
-
-                if (operatorTokenIndex != -1)
+                if (token is VariableToken)
                 {
-                    // 2 - link word index
-                    var linkTokensList = Tokens.GetRange(1, operatorTokenIndex - 2);
-                    bool isListTokensSuccessful = AnalyzeLinks(ref linkTokensList, 1);
-                    if (!isListTokensSuccessful)
-                    {
-                        return;
-                    }
-                }
-                else
-                {
-                    Errors.Add(new SyntacticalError("Операторы не найдены", -1));
-                    return;
+                    linkTokensEndIndex = i - 1;
+                    break;
                 }
             }
 
+            if (linkTokensEndIndex == -1)
+            {
+                Errors.Add(new SyntacticalError("Токены не найдены", 1));
+                return;
+            }
+
+            var linkTokens = new List<IToken>();
+
+            for (int i = 1; i <= linkTokensEndIndex; i++)
+            {
+                linkTokens.Add(Tokens[i]);
+            }
+            // анализ токенов
+
+            bool isLinkTokensSuccess = AnalyzeLinks(ref linkTokens, 1);
+            if (!isLinkTokensSuccess)
+            {
+                return;
+            }
             #endregion
 
             #region Operators
 
+            // TODO: найти операторы и передать в функцию
             bool isOperatorTokensSuccessful = AnalyzeOperators(null);
             if (!isOperatorTokensSuccessful)
             {
@@ -115,37 +122,84 @@ namespace LanguageLib.Analyzers.Implementation
         private bool AnalyzeLinks(ref List<IToken> tokens, int tokensPosition)
         {
             // Звено = "First" Вещ ! "Second" Вещ... Вещ ! "Third" Цел ! "Fourth" Цел... Цел
+
+            // получаю индексы токенов First, Second, Third, Fourth
+            var tokensIndexes = new List<int>();
             for (int i = 0; i < tokens.Count; i++)
             {
                 var token = tokens[i];
+                if (token is FirstToken || token is SecondToken || token is ThirdToken || token is FourthToken)
+                {
+                    tokensIndexes.Add(i);
+                }
+            }
+
+            // проверка
+            
+            var linkTokens = new List<IToken>()
+            {
+                new FirstToken(), new SecondToken(),
+                new ThirdToken(), new FourthToken()
+            };
+
+            // последнее слово может быть запятой
+
+            if (tokens[tokens.Count - 1] is CommaToken)
+            {
+                Errors.Add(new SyntacticalError("Ожидается 'First', 'Second', 'Third', Fourth",
+                    tokens[tokens.Count - 1].Position));
+                return false;
+            }
+
+            // после запятой может быть не First, Second, Third, Fourth
+
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                if (tokens[i] is CommaToken)
+                {
+                    var token = tokens[i + 1];
+                    if (token is not FirstToken && token is not SecondToken && token is not ThirdToken &&
+                        token is not FourthToken)
+                    {
+                        Errors.Add(
+                            new SyntacticalError($"После запятой ожидалось 'First', 'Second', 'Third', 'Fourth'", 
+                                token.Position + 1)
+                        );
+                    }
+                }
+            }
+
+            foreach (int tokenIndex in tokensIndexes)
+            {
+                var token = tokens[tokenIndex];
+
+                if (tokenIndex == tokens.Count - 1)
+                {
+                    Errors.Add(new SyntacticalError($"После слова '{token.Value}' ничего нет", token.Position));
+                    return false;
+                }
 
                 if (token is FirstToken)
                 {
-                    // i также может быть концом строки
+                    // TODO: проверить третье слово - запятая, если это не конец списка
 
-                    if (i == tokens.Count - 1 && token is not DecimalToken)
+                    // "First" Вещественное
+                    if ((tokenIndex + 1) <= tokens.Count - 1 && tokens[tokenIndex + 1] is not DecimalToken)
                     {
-                        Errors.Add(new SyntacticalError("Ожидалось вещественное число", i + tokensPosition));
-                        break;
-                    }
-
-                    if(tokens[i + 1] is not DecimalToken || (i + 1) >= tokens.Count)
-                    {
-                        Errors.Add(new SyntacticalError("Ожидалось вещественное число", i + 1 + tokensPosition));
+                        Errors.Add(new SyntacticalError("Ожидалось вещественное число", tokenIndex + 1));
                         return false;
                     }
 
-                    if(tokens[i + 2] is not CommaToken || (i + 2) >= tokens.Count)
+                    // проверка: третье слово - запятая
+                    if ((tokenIndex + 2) < tokens.Count - 2 && tokens[tokenIndex + 2] is not CommaToken)
                     {
-                        Errors.Add(new SyntacticalError("Ожидалась запятая", i + 2 + tokensPosition));
+                        Errors.Add(new SyntacticalError("Ожидалось запятая", tokenIndex + 2));
+                        return false;
                     }
                 }
-                else if (token is SecondToken)
-                {
-                    
-                }
-                else if(token is ThirdToken){}
-                else if(token is FourthToken){}
+                else if (token is SecondToken) { }
+                else if (token is ThirdToken) { }
+                else if (token is FourthToken) { }
             }
 
             return true;
