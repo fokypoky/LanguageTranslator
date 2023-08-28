@@ -200,14 +200,14 @@ namespace LanguageLib.Analyzers.Implementation
                     // "First" Вещественное
                     if ((tokenIndex + 1) <= tokens.Count - 1 && tokens[tokenIndex + 1] is not DecimalToken)
                     {
-                        Errors.Add(new SyntacticalError("Ожидалось вещественное число", tokenIndex + 1));
+                        Errors.Add(new SyntacticalError("Ожидалось вещественное число", token.Position + 1));
                         return false;
                     }
 
                     // проверка: третье слово - запятая
                     if ((tokenIndex + 2) < tokens.Count - 2 && tokens[tokenIndex + 2] is not CommaToken)
                     {
-                        Errors.Add(new SyntacticalError("Ожидалось запятая", tokenIndex + 2));
+                        Errors.Add(new SyntacticalError("Ожидалось запятая", token.Position + 2));
                         return false;
                     }
                 }
@@ -254,7 +254,22 @@ namespace LanguageLib.Analyzers.Implementation
                     
                 }
 
-                else if (token is ThirdToken) { }
+                else if (token is ThirdToken)
+                {
+                    // "Third" Целое
+                    if ((tokenIndex + 1) <= tokens.Count - 1 && tokens[tokenIndex + 1] is not IntegerToken)
+                    {
+                        Errors.Add(new SyntacticalError("Ожидалось целое число", tokenIndex + 1));
+                        return false;
+                    }
+
+                    // проверка: третье слово - запятая
+                    if ((tokenIndex + 2) < tokens.Count - 2 && tokens[tokenIndex + 2] is not CommaToken)
+                    {
+                        Errors.Add(new SyntacticalError("Ожидалось запятая", tokenIndex + 2));
+                        return false;
+                    }
+                }
                 else if (token is FourthToken) { }
             }
 
