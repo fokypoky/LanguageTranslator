@@ -55,8 +55,7 @@ namespace LanguageLib.Analyzers.Implementation
 
             // TODO: проверить второе слово языка
 
-            if (Tokens[1] is not FirstToken && Tokens[1] is not SecondToken && Tokens[1] is not ThirdToken &&
-                Tokens[1] is not FourthToken)
+            if (!TokenIsLinkWord(Tokens[1]))
             {
                 Errors.Add(new SyntacticalError("Второе слово не First, Second, Third, Fourth", 1));
                 return;
@@ -72,6 +71,7 @@ namespace LanguageLib.Analyzers.Implementation
 
                 if ((i + 1) < Tokens.Count - 1 && token is IntegerToken && Tokens[i + 1] is ColonToken)
                 {
+                    linkTokensEndIndex = i - 1;
                     break;
                 }
 
@@ -135,12 +135,17 @@ namespace LanguageLib.Analyzers.Implementation
             }
 
             // проверка
-            
-            var linkTokens = new List<IToken>()
+
+            // после First, Second, Third, Fourth может ничего не быть
+
+            if (TokenIsLinkWord(tokens[tokens.Count - 1]))
             {
-                new FirstToken(), new SecondToken(),
-                new ThirdToken(), new FourthToken()
-            };
+                Errors.Add(
+                    new SyntacticalError($"После '{tokens[tokens.Count - 1].Value}' ничего нет",
+                        Tokens.IndexOf(tokens[tokens.Count - 1]))
+                );
+                return false;
+            }
 
             // последнее слово может быть запятой
 
@@ -158,31 +163,40 @@ namespace LanguageLib.Analyzers.Implementation
                 if (tokens[i] is CommaToken)
                 {
                     var token = tokens[i + 1];
-                    if (token is not FirstToken && token is not SecondToken && token is not ThirdToken &&
-                        token is not FourthToken)
+                    if (!TokenIsLinkWord(token))
                     {
                         Errors.Add(
-                            new SyntacticalError($"После запятой ожидалось 'First', 'Second', 'Third', 'Fourth'", 
+                            new SyntacticalError($"После запятой ожидалось 'First', 'Second', 'Third', 'Fourth'",
                                 token.Position + 1)
                         );
                     }
                 }
             }
 
+            // проверка токена(что идет после него)
             foreach (int tokenIndex in tokensIndexes)
             {
                 var token = tokens[tokenIndex];
 
+                // после слова может ничего не быть(последнее слово)
                 if (tokenIndex == tokens.Count - 1)
                 {
                     Errors.Add(new SyntacticalError($"После слова '{token.Value}' ничего нет", token.Position));
                     return false;
                 }
 
+                // после слова может ничего не быть (запятая)
+                if (tokens[tokenIndex + 1] is CommaToken)
+                {
+                    Errors.Add(
+                        new SyntacticalError($"После слова {token.Value} стоит запятая, но нет вещественных/целых чисел", 
+                            token.Position + 1)
+                    );
+                    return false;
+                }
+
                 if (token is FirstToken)
                 {
-                    // TODO: проверить третье слово - запятая, если это не конец списка
-
                     // "First" Вещественное
                     if ((tokenIndex + 1) <= tokens.Count - 1 && tokens[tokenIndex + 1] is not DecimalToken)
                     {
@@ -197,7 +211,49 @@ namespace LanguageLib.Analyzers.Implementation
                         return false;
                     }
                 }
-                else if (token is SecondToken) { }
+                
+                else if (token is SecondToken)
+                {
+                    // определение конца токена
+                    int secondTokenEndIndex = -1;
+
+                    for (int i = tokenIndex; i < tokens.Count - 1; i++)
+                    {
+                        if (tokens[i] is CommaToken)
+                        {
+                            secondTokenEndIndex = i;
+                            break;
+                        }
+
+                        if (i == tokens.Count - 1)
+                        {
+                            secondTokenEndIndex = i;
+                            break;
+                        }
+                    }
+
+                    // определение токенов после слова Second
+
+                    var secondWordSubTokens = new List<IToken>();
+                    
+                    for (int i = tokenIndex; i < secondTokenEndIndex; i++)
+                    {
+                        secondWordSubTokens.Add(tokens[i]);
+                    }
+
+
+                    // проверка вещественных чисел россыпью
+                    for (int i = 1; i < secondWordSubTokens.Count; i++)
+                    {
+                        if (secondWordSubTokens[i] is not DecimalToken)
+                        {
+                            Errors.Add(new SyntacticalError("Ожидалось вещественное число", secondWordSubTokens[i].Position));
+                            return false;
+                        }
+                    }
+                    
+                }
+
                 else if (token is ThirdToken) { }
                 else if (token is FourthToken) { }
             }
@@ -209,5 +265,8 @@ namespace LanguageLib.Analyzers.Implementation
         {
             return true;
         }
+
+        private bool TokenIsLinkWord(IToken token) =>
+            token is FirstToken || token is SecondToken || token is ThirdToken || token is FourthToken;
     }
 }
