@@ -217,31 +217,33 @@ namespace LanguageLib.Analyzers.Implementation
                     // определение конца токена
                     int secondTokenEndIndex = -1;
 
-                    for (int i = tokenIndex; i < tokens.Count - 1; i++)
+                    for (int i = tokenIndex; i < tokens.Count; i++)
                     {
-                        if (tokens[i] is CommaToken)
-                        {
-                            secondTokenEndIndex = i;
-                            break;
-                        }
-
+                        var _token = tokens[i];
                         if (i == tokens.Count - 1)
                         {
                             secondTokenEndIndex = i;
                             break;
                         }
+
+                        if (_token is CommaToken)
+                        {
+                            secondTokenEndIndex = i - 1;
+                            break;
+                        }
                     }
 
-                    // определение токенов после слова Second
+                    // определение токенов после слова Fourth
 
                     var secondWordSubTokens = new List<IToken>();
-                    
-                    for (int i = tokenIndex; i < secondTokenEndIndex; i++)
+
+                    for (int i = tokenIndex; i <= secondTokenEndIndex; i++)
                     {
                         secondWordSubTokens.Add(tokens[i]);
                     }
 
                     // проверка вещественных чисел россыпью
+
                     for (int i = 1; i < secondWordSubTokens.Count; i++)
                     {
                         if (secondWordSubTokens[i] is not DecimalToken)
@@ -284,7 +286,7 @@ namespace LanguageLib.Analyzers.Implementation
 
                         if (_token is CommaToken)
                         {
-                            fourthTokenEndIndex = i;
+                            fourthTokenEndIndex = i - 1;
                             break;
                         }
                     }
