@@ -96,7 +96,7 @@ namespace LanguageLib.Analyzers.Implementation
             }
             // анализ токенов
 
-            bool isLinkTokensSuccess = AnalyzeLinks(ref linkTokens, 1);
+            bool isLinkTokensSuccess = AnalyzeLinks(ref linkTokens);
             if (!isLinkTokensSuccess)
             {
                 return;
@@ -105,8 +105,31 @@ namespace LanguageLib.Analyzers.Implementation
 
             #region Operators
 
-            // TODO: найти операторы и передать в функцию
-            bool isOperatorTokensSuccessful = AnalyzeOperators(null);
+            // поиск операторов
+            int operatorTokensStartIndex = linkTokensEndIndex + 1;
+            int operatorTokensEndIndex = -1;
+
+            for (int i = operatorTokensStartIndex; i < Tokens.Count; i++)
+            {
+                if (Tokens[i] is StopToken)
+                {
+                    operatorTokensEndIndex = i;
+                    break;
+                }
+            }
+            
+            // сбор операторов
+
+            var operatorTokens = new List<IToken>();
+
+            for (int i = operatorTokensStartIndex; i < operatorTokensEndIndex; i++)
+            {
+                operatorTokens.Add(Tokens[i]);
+            }
+
+            // анализ операторов
+
+            bool isOperatorTokensSuccessful = AnalyzeOperators(ref operatorTokens);
             if (!isOperatorTokensSuccessful)
             {
                 return;
@@ -119,7 +142,7 @@ namespace LanguageLib.Analyzers.Implementation
             throw new NotImplementedException();
         }
 
-        private bool AnalyzeLinks(ref List<IToken> tokens, int tokensPosition)
+        private bool AnalyzeLinks(ref List<IToken> tokens)
         {
             // Звено = "First" Вещ ! "Second" Вещ... Вещ ! "Third" Цел ! "Fourth" Цел... Цел
 
@@ -316,7 +339,7 @@ namespace LanguageLib.Analyzers.Implementation
             return true;
         }
 
-        private bool AnalyzeOperators(List<IToken> tokens)
+        private bool AnalyzeOperators(ref List<IToken> tokens)
         {
             return true;
         }
