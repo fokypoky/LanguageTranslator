@@ -4,6 +4,7 @@ using LanguageLib.AST.Interfaces;
 using LanguageLib.Errors;
 using LanguageLib.Errors.Interfaces;
 using LanguageLib.Tokens.Implementation;
+using LanguageLib.Tokens.Implementation.MathOperations;
 using LanguageLib.Tokens.Implementation.NumberTokens;
 using LanguageLib.Tokens.Implementation.Other;
 using LanguageLib.Tokens.Interfaces;
@@ -341,6 +342,23 @@ namespace LanguageLib.Analyzers.Implementation
 
         private bool AnalyzeOperators(ref List<IToken> tokens)
         {
+            // поиск индексов начала каждой переменной
+            var variableStartIndexesList = new List<int>();
+
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                if (tokens[i] is VariableToken && i + 1 < tokens.Count - 1 && tokens[i + 1] is AssignToken)
+                {
+                    variableStartIndexesList.Add(i);
+                }
+            }
+
+            //проверка токенов
+            foreach (int tokenIndex in variableStartIndexesList)
+            {
+                
+            }
+
             return true;
         }
 
