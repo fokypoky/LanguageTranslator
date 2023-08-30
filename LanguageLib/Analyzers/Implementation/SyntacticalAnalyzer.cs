@@ -459,6 +459,30 @@ namespace LanguageLib.Analyzers.Implementation
                 foreach (var token in currentVariableTokensList)
                 {
                     // используемая переменная может быть не определена ранее
+                    if (token is VariableToken)
+                    {
+                        var currentVariableToken = (VariableToken)token;
+                        bool isVariableDefined = false;
+
+                        for (int i = currentTokenIndex - 1; i >= 0; i--)
+                        {
+                            if (tokens[i] is VariableToken)
+                            {
+                                var findedVariableToken = (VariableToken)tokens[i];
+
+                                if (findedVariableToken.Name == currentVariableToken.Name)
+                                {
+                                    isVariableDefined = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!isVariableDefined)
+                        {
+                            Errors.Add(new SyntacticalError($"Переменная {currentVariableToken.Name} не определена", currentVariableToken.Position));
+                        }
+                    }
 
                     if (!TokenFitsVariable(token))
                     {
