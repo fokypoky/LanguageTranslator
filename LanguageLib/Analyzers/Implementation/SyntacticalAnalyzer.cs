@@ -380,13 +380,6 @@ namespace LanguageLib.Analyzers.Implementation
                 return false;
             }
 
-            // после метки может ничего не быть
-            for (int i = 0; i < tokens.Count; i++)
-            {
-                var token = tokens[i];
-
-                if(token is IntegerToken && )
-            }
 
             // после знака "=" может ничего не быть("=" - последнее слово)
             for (int i = 0; i < tokens.Count; i++)
@@ -465,6 +458,8 @@ namespace LanguageLib.Analyzers.Implementation
                 // в определении переменной могут быть либо другие переменные либо вещественные числа либо функции
                 foreach (var token in currentVariableTokensList)
                 {
+                    // используемая переменная может быть не определена ранее
+
                     if (!TokenFitsVariable(token))
                     {
                         Errors.Add(new SyntacticalError(
