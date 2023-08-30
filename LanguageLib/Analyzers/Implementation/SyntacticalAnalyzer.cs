@@ -4,6 +4,8 @@ using LanguageLib.AST.Interfaces;
 using LanguageLib.Errors;
 using LanguageLib.Errors.Interfaces;
 using LanguageLib.Tokens.Implementation;
+using LanguageLib.Tokens.Implementation.Enums;
+using LanguageLib.Tokens.Implementation.MathFunctions;
 using LanguageLib.Tokens.Implementation.MathOperations;
 using LanguageLib.Tokens.Implementation.NumberTokens;
 using LanguageLib.Tokens.Implementation.Other;
@@ -107,6 +109,9 @@ namespace LanguageLib.Analyzers.Implementation
             #region Operators
 
             // поиск операторов
+
+            // TODO: добавить проверку операторы ли найдены
+
             int operatorTokensStartIndex = linkTokensEndIndex + 1;
             int operatorTokensEndIndex = -1;
 
@@ -127,7 +132,7 @@ namespace LanguageLib.Analyzers.Implementation
             {
                 operatorTokens.Add(Tokens[i]);
             }
-
+            
             // анализ операторов
 
             bool isOperatorTokensSuccessful = AnalyzeOperators(ref operatorTokens);
@@ -342,11 +347,77 @@ namespace LanguageLib.Analyzers.Implementation
 
         private bool AnalyzeOperators(ref List<IToken> tokens)
         {
+            // проверка соответствия символам(sin, cos, tg, ctg, *, /, +, -, ^, переменные, метка:)
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                var token = tokens[i];
+
+                // определение является ли слово меткой
+                if (i + 1 <= tokens.Count - 1)
+                {
+                    if (token is IntegerToken && tokens[i + 1] is ColonToken)
+                    {
+                        // i увеличивается на 1 в определении цикла
+                        i++;
+                        continue;
+                    }
+                }
+
+                if (!TokenIsMathOperation(token) && !TokenIsMathFunctionToken(token) && token is not DecimalToken && token is not AssignToken && token is not VariableToken)
+                {
+                    Errors.Add(new SyntacticalError(
+                        "В операторах могут быть только метка ':', вещественные числа, функции, математические операции",
+                        token.Position));
+                    return false;
+                }
+            }
+
+            // метка может быть последним словом
+
+            if (tokens[tokens.Count - 1] is ColonToken && tokens[tokens.Count - 2] is IntegerToken)
+            {
+                Errors.Add(new SyntacticalError("После ':' ожидалось определение переменной", tokens.Count - 1));
+                return false;
+            }
+
+            // после метки может ничего не быть
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                var token = tokens[i];
+
+                if(token is IntegerToken && )
+            }
+
+            // после знака "=" может ничего не быть("=" - последнее слово)
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                if (tokens[i] is AssignToken && i == tokens.Count - 1)
+                {
+                    Errors.Add(new SyntacticalError("После знака '=' ожидается определение переменной", tokens[i].Position + 1));
+                    return false;
+                }
+            }
+
             // поиск индексов начала каждой переменной
             var variableStartIndexesList = new List<int>();
 
             for (int i = 0; i < tokens.Count; i++)
             {
+                var token = tokens[i];
+
+                if (variableStartIndexesList.Contains(i))
+                {
+                    continue;
+                }
+
+                // метка ":"
+                if (tokens[i] is IntegerToken && i + 1 < tokens.Count - 1 && tokens[i + 1] is ColonToken)
+                {
+                    variableStartIndexesList.Add(i + 2);
+                    continue;
+                }
+
+                // переменная "="
                 if (tokens[i] is VariableToken && i + 1 < tokens.Count - 1 && tokens[i + 1] is AssignToken)
                 {
                     variableStartIndexesList.Add(i);
@@ -354,9 +425,71 @@ namespace LanguageLib.Analyzers.Implementation
             }
 
             //проверка токенов
-            foreach (int tokenIndex in variableStartIndexesList)
+            for (int tokenIndex = 0; tokenIndex < variableStartIndexesList.Count; tokenIndex++)
             {
-                
+                // токены текущей переменной
+                var currentVariableTokensList = new List<IToken>(); 
+                // индекс текущего токена в общем массиве
+                int currentTokenIndex = variableStartIndexesList[tokenIndex];
+
+                // собираем токены текущей переменной до начала следующей
+                int nextVariableTokenIndex = -1;
+
+                // TODO: ошибка в сборе - последний индекс захватывает метку ":"
+                if (tokenIndex == variableStartIndexesList.Count - 1) // если текущая переменная последняя
+                {
+                    nextVariableTokenIndex = tokens.Count - 1;
+                }
+                else // если не последняя
+                {
+                    int _nextVariableTokenIndex = variableStartIndexesList[tokenIndex + 1] - 1;
+
+                    // проверка если есть метка ":" перед следующей переменной
+                    if (tokens[_nextVariableTokenIndex] is ColonToken &&
+                        tokens[_nextVariableTokenIndex - 1] is IntegerToken)
+                    {
+                        nextVariableTokenIndex = _nextVariableTokenIndex - 2;
+                    }
+                    else
+                    {
+                        nextVariableTokenIndex = _nextVariableTokenIndex;
+                    }
+                }
+
+                // начинаем с элемента после знака "="
+                for (int i = currentTokenIndex + 2; i <= nextVariableTokenIndex; i++)
+                {
+                    currentVariableTokensList.Add(tokens[i]);
+                }
+
+                // в определении переменной могут быть либо другие переменные либо вещественные числа либо функции
+                foreach (var token in currentVariableTokensList)
+                {
+                    if (!TokenFitsVariable(token))
+                    {
+                        Errors.Add(new SyntacticalError(
+                            "В определении переменной могут содержаться только вещественные числа, переменные, функции и математические операции",
+                            token.Position));
+                        return false;
+                    }
+                }
+
+                // проверка математических операций
+                for (int i = currentTokenIndex + 2; i <= nextVariableTokenIndex; i++)
+                {
+                    var token = tokens[i];
+                    
+                    // проверка деления на 0 (предыдущее слово - "/")
+                    if (i > 0 && token is DecimalToken)
+                    {
+                        decimal tokenValue = Convert.ToDecimal(token.Value);
+                        if (tokenValue == 0)
+                        {
+                            Errors.Add(new SyntacticalError("Деление на ноль", token.Position));
+                            return false;
+                        }
+                    }
+                }
             }
 
             return true;
@@ -364,5 +497,23 @@ namespace LanguageLib.Analyzers.Implementation
 
         private bool TokenIsLinkWord(IToken token) =>
             token is FirstToken || token is SecondToken || token is ThirdToken || token is FourthToken;
+
+        private bool TokenIsMathFunctionToken(IToken token)
+        {
+            return token is SinToken || token is CosToken || token is TgToken || token is CtgToken;
+        }
+
+        private bool TokenIsMathOperation(IToken token)
+        {
+            return token is PlusToken || token is MinusToken || token is MultiplyToken || token is DivisionToken ||
+                   token is ExpToken;
+        }
+
+        private bool TokenFitsVariable(IToken token)
+        {
+            return TokenIsMathFunctionToken(token) || TokenIsMathOperation(token) || token is VariableToken ||
+                   token is DecimalToken;
+        }
+
     }
 }
