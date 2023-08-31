@@ -428,7 +428,6 @@ namespace LanguageLib.Analyzers.Implementation
                 // собираем токены текущей переменной до начала следующей
                 int nextVariableTokenIndex = -1;
 
-                // TODO: ошибка в сборе - последний индекс захватывает метку ":"
                 if (tokenIndex == variableStartIndexesList.Count - 1) // если текущая переменная последняя
                 {
                     nextVariableTokenIndex = tokens.Count - 1;
@@ -514,21 +513,24 @@ namespace LanguageLib.Analyzers.Implementation
                         }
 
                         // если математические операции разные, кроме +-
-                        // TODO: дописать
+                        
                     }
 
                     // проверка деления на 0 (предыдущее слово - "/")
-                    if (i > 0 && token is DecimalToken)
+                    if (token is DivisionToken && i + 1 <= tokens.Count - 1 && tokens[i + 1] is DecimalToken)
                     {
-                        decimal tokenValue = Convert.ToDecimal(token.Value);
+                        decimal tokenValue = Convert.ToDecimal(tokens[i + 1].Value);
+
                         if (tokenValue == 0)
                         {
-                            Errors.Add(new SyntacticalError("Деление на ноль", token.Position));
+                            Errors.Add(new SyntacticalError("Деление на 0", token.Position + 1));
                             return false;
                         }
                     }
 
-                    // проверка на то, что бы перед и после математических операций были значения 
+
+                    // проверка на то, что бы перед и после математических операций были значения
+                    
                 }
             }
 
