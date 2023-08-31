@@ -481,6 +481,7 @@ namespace LanguageLib.Analyzers.Implementation
                         if (!isVariableDefined)
                         {
                             Errors.Add(new SyntacticalError($"Переменная {currentVariableToken.Name} не определена", currentVariableToken.Position));
+                            return false;
                         }
                     }
 
@@ -498,6 +499,24 @@ namespace LanguageLib.Analyzers.Implementation
                 {
                     var token = tokens[i];
                     
+                    // проверка дублирования математических операций(**, //, ^^, ++)
+                    if (TokenIsMathOperation(token))
+                    {
+                        var leftToken = tokens[i - 1];
+                        var rightToken = tokens[i + 1];
+
+                        // дублирование математических операций
+                        if ((TokenIsMathOperation(leftToken) || TokenIsMathOperation(rightToken)) && (leftToken.Type == token.Type || rightToken.Type == token.Type) &&
+                            (token.Type != TokenType.Minus))
+                        {
+                            Errors.Add(new SyntacticalError("Дублирование математических операций", token.Position));
+                            return false;
+                        }
+
+                        // если математические операции разные, кроме +-
+                        // TODO: дописать
+                    }
+
                     // проверка деления на 0 (предыдущее слово - "/")
                     if (i > 0 && token is DecimalToken)
                     {
@@ -508,6 +527,8 @@ namespace LanguageLib.Analyzers.Implementation
                             return false;
                         }
                     }
+
+                    // проверка на то, что бы перед и после математических операций были значения 
                 }
             }
 
