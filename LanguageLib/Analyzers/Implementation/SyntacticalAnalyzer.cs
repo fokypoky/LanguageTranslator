@@ -526,9 +526,22 @@ namespace LanguageLib.Analyzers.Implementation
                             Errors.Add(new SyntacticalError("Различные математические операции, разрешено '+-' ", token.Position));
                             return false;
                         }
+                    }
 
-                        // проверка на то, что бы перед и после математических операций были значения
-                        
+                    // проверка на то, что между математической операцией что-то есть
+
+                    if (TokenIsMathOperation(token) && i > 0 && i < tokens.Count - 1)
+                    {
+                        var leftToken = tokens[i - 1];
+                        var rightToken = tokens[i + 1];
+
+                        if (!TokenIsMathOperation(leftToken) && TokenIsMathFunctionToken(leftToken) &&
+                            leftToken is not DecimalToken && leftToken is not VariableToken && !(token is MinusToken && leftToken is AssignToken))
+                        {
+                            Errors.Add(new SyntacticalError("Ожидалась переменная, вещественное число, функция или математическая операция", leftToken.Position));
+                            return false;
+                        }
+
                     }
 
                     // проверка деления на 0 (предыдущее слово - "/")
