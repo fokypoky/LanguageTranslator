@@ -513,6 +513,21 @@ namespace LanguageLib.Analyzers.Implementation
                         }
 
                         // если математические операции разные, кроме +-
+                        if (TokenIsMathOperation(leftToken) && leftToken.Type != TokenType.Plus &&
+                            token.Type != TokenType.Minus && token.Type != leftToken.Type)
+                        {
+                            Errors.Add(new SyntacticalError("Различные математические операции, разрешено '+-' ", token.Position));
+                            return false;
+                        }
+
+                        if (TokenIsMathOperation(rightToken) && rightToken.Type != TokenType.Minus &&
+                            token.Type != TokenType.Minus)
+                        {
+                            Errors.Add(new SyntacticalError("Различные математические операции, разрешено '+-' ", token.Position));
+                            return false;
+                        }
+
+                        // проверка на то, что бы перед и после математических операций были значения
                         
                     }
 
@@ -527,10 +542,6 @@ namespace LanguageLib.Analyzers.Implementation
                             return false;
                         }
                     }
-
-
-                    // проверка на то, что бы перед и после математических операций были значения
-                    
                 }
             }
 
