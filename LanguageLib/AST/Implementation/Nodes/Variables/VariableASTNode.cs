@@ -18,6 +18,11 @@ namespace LanguageLib.AST.Implementation.Nodes.Variables
             VariableName = variableName;
         }
 
+        public VariableASTNode(string variableName)
+        {
+            VariableName = variableName;
+        }
+        
         public void Compute() { }
     }
 }
