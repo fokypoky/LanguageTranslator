@@ -1,5 +1,6 @@
-﻿using System.Linq;
-using LanguageLib.Analyzers.Interfaces;
+﻿using LanguageLib.Analyzers.Interfaces;
+using LanguageLib.AST.Implementation.Nodes.MathOperations;
+using LanguageLib.AST.Implementation.Nodes.Root;
 using LanguageLib.AST.Interfaces;
 using LanguageLib.Errors;
 using LanguageLib.Errors.Interfaces;
@@ -10,6 +11,8 @@ using LanguageLib.Tokens.Implementation.MathOperations;
 using LanguageLib.Tokens.Implementation.NumberTokens;
 using LanguageLib.Tokens.Implementation.Other;
 using LanguageLib.Tokens.Interfaces;
+using LanguageLib.AST.Implementation.Nodes.Variables;
+using LanguageLib.AST.Interfaces;
 
 namespace LanguageLib.Analyzers.Implementation
 {
@@ -151,7 +154,80 @@ namespace LanguageLib.Analyzers.Implementation
 
         public void MakeAST()
         {
-            throw new NotImplementedException();
+            var variableNodesList = new List<IVariableAstNode>();
+
+            // ищем индексы начала переменных
+            var variablesStartIndexes = new List<int>();
+            for (int i = _operatorsStartIndex; i <= _operatorsEndIndex; i++)
+            {
+                var token = Tokens[i];
+
+                if (i + 1 < Tokens.Count - 1 && token is VariableToken && Tokens[i + 1] is AssignToken)
+                {
+                    variablesStartIndexes.Add(i);
+                    i++;
+                    continue;
+                }
+
+                if (TokenIsLabel(i))
+                {
+                    i++;
+                    continue;
+                }
+            }
+
+            var variableNodes = new List<IVariableAstNode>();
+
+            // собираем дерево
+            for (int tokenIndex = 0; tokenIndex < variablesStartIndexes.Count; tokenIndex++)
+            {
+                #region Определение токенов каждой переменой
+
+                // токены текущей переменной
+                var currentVariableTokensList = new List<IToken>();
+                // индекс текущего токена в общем массиве
+                int currentTokenGlobalIndex = variablesStartIndexes[tokenIndex];
+
+                // собираем токены текущей переменной до начала следующей
+                int nextVariableGlobalTokenIndex = -1;
+
+                if (tokenIndex == variablesStartIndexes.Count - 1) // если текущая переменная последняя
+                {
+                    nextVariableGlobalTokenIndex = Tokens.Count - 1;
+                }
+                else // если не последняя
+                {
+                    int _nextVariableTokenIndex = variablesStartIndexes[tokenIndex + 1] - 1;
+
+                    // проверка если есть метка ":" перед следующей переменной
+                    if (Tokens[_nextVariableTokenIndex] is ColonToken &&
+                        Tokens[_nextVariableTokenIndex - 1] is IntegerToken)
+                    {
+                        nextVariableGlobalTokenIndex = _nextVariableTokenIndex - 2;
+                    }
+                    else
+                    {
+                        nextVariableGlobalTokenIndex = _nextVariableTokenIndex;
+                    }
+                }
+                // +2 потому что сначала название переменной "="
+                for (int i = currentTokenGlobalIndex + 2; i <= nextVariableGlobalTokenIndex; i++)
+                {
+                    currentVariableTokensList.Add(Tokens[i]);
+                }
+
+                #endregion
+
+                var currentVariableToken = (VariableToken)Tokens[currentTokenGlobalIndex];
+                
+                var currentVariableNode = new VariableASTNode(currentVariableToken.Name);
+
+                currentVariableNode.Value = CalculateVariable(currentVariableTokensList);
+
+                variableNodes.Add(currentVariableNode);
+
+            }
+            
         }
 
         private bool AnalyzeLinks(ref List<IToken> tokens)
@@ -397,6 +473,9 @@ namespace LanguageLib.Analyzers.Implementation
                 }
             }
 
+            // переменная с одним именем может быть объявлена несколько раз
+            // TODO: реализовать
+
             // поиск индексов начала каждой переменной
             var variableStartIndexesList = new List<int>();
 
@@ -567,6 +646,17 @@ namespace LanguageLib.Analyzers.Implementation
             return true;
         }
 
+        private decimal CalculateVariable(List<IToken> tokens)
+        {
+            IASTNode rootNode;
+
+            var firstToken = tokens[0];
+            // TODO: ИДЕМ ЛИНЕЙНО, ЧЕРЕЗ SWITCH-CASE, ПРОВЕРЯЕМ ОПЕРАЦИИ УМНОЖЕНИЯ И ДЕЛЕНИЯ ТОЖЕ ЛИНЕЙНО
+            // TODO: С ШАГОМ ЧЕРЕЗ 1
+
+            throw new NotImplementedException();
+        }
+
         private bool TokenIsLinkWord(IToken token) =>
             token is FirstToken || token is SecondToken || token is ThirdToken || token is FourthToken;
 
@@ -587,5 +677,10 @@ namespace LanguageLib.Analyzers.Implementation
                    token is DecimalToken;
         }
 
+        private bool TokenIsLabel(int tokenIndex)
+        {
+            return tokenIndex + 1 < Tokens.Count - 1 && Tokens[tokenIndex] is IntegerToken &&
+                   Tokens[tokenIndex + 1] is ColonToken;
+        }
     }
 }
