@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LanguageLib.Tokens.Interfaces
 {
-    public interface IVariableToken
+    public interface IVariableToken : IToken
     {
         string Name { get; set; }
     }
