@@ -41,6 +41,9 @@ namespace LanguageConsoleApp
                 return;
             }
 
+            syntaxAnalyzer.MakeAST();
+            var ast = syntaxAnalyzer.AST;
+
             Console.WriteLine("OK");
         }
     }
