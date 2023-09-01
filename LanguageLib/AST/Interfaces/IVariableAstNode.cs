@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace LanguageLib.AST.Interfaces
 {
-    public interface IAST
+    public interface IVariableAstNode : IASTNode
     {
-        IRootASTNode Root { get; set; }
+        string VariableName { get; set; }
     }
 }

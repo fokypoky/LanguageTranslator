@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace LanguageLib.AST.Interfaces
 {
-    public interface IAST
+    public interface IASTNode
     {
-        IRootASTNode Root { get; set; }
+        decimal Value { get; set; }
+        void Compute();
     }
 }

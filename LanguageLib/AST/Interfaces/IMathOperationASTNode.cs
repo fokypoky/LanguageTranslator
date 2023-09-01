@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace LanguageLib.AST.Interfaces
 {
-    public interface IAST
+    public interface IMathOperationASTNode : IASTNode
     {
-        IRootASTNode Root { get; set; }
+        IASTNode LeftNode { get; set; }
+        IASTNode RightNode { get; set; }
     }
 }
