@@ -24,6 +24,9 @@ namespace LanguageLib.Analyzers.Implementation
             get => Errors.Count;
         }
 
+        private int _operatorsStartIndex;
+        private int _operatorsEndIndex;
+
         public SyntacticalAnalyzer(List<IToken> tokens)
         {
             Tokens = tokens;
@@ -124,6 +127,9 @@ namespace LanguageLib.Analyzers.Implementation
                 }
             }
             
+            _operatorsStartIndex = operatorTokensStartIndex;
+            _operatorsEndIndex = operatorTokensEndIndex;
+
             // сбор операторов
 
             var operatorTokens = new List<IToken>();
