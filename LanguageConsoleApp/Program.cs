@@ -2,6 +2,7 @@
 using LanguageConsoleApp.Domain.Repositories.Implementation;
 using LanguageLib.Analyzers.Implementation;
 using LanguageLib.Errors.Implementation;
+using LanguageLib.Tokens.Interfaces;
 
 namespace LanguageConsoleApp
 {
