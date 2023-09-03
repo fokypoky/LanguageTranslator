@@ -10,5 +10,6 @@ namespace LanguageLib.Analyzers.Implementation
     {
         public int StartIndex { get; set; }
         public int EndIndex { get; set; }
+        public VariableOperationsSeriaType Type { get; set; }
     }
 }
