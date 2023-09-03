@@ -1,5 +1,8 @@
-﻿using LanguageLib.Analyzers.Interfaces;
+﻿using System.Data;
+using System.Runtime.InteropServices;
+using LanguageLib.Analyzers.Interfaces;
 using LanguageLib.AST.Implementation.Nodes.MathOperations;
+using LanguageLib.AST.Implementation.Nodes.NumericValues;
 using LanguageLib.AST.Implementation.Nodes.Root;
 using LanguageLib.AST.Interfaces;
 using LanguageLib.Errors;
@@ -218,13 +221,18 @@ namespace LanguageLib.Analyzers.Implementation
 
                 #endregion
 
-                var currentVariableToken = (VariableToken)Tokens[currentTokenGlobalIndex];
+                /*var currentVariableToken = (VariableToken)Tokens[currentTokenGlobalIndex];
                 
                 var currentVariableNode = new VariableASTNode(currentVariableToken.Name);
 
                 currentVariableNode.Value = CalculateVariableTokens(currentVariableTokensList);
 
                 variableNodes.Add(currentVariableNode);
+                */
+
+                // TODO: сделать замену переменной (в определении) на вещественное число
+
+                decimal variableValue = CalculateMathFunctionTokens2(currentVariableTokensList, 0);
 
             }
             
@@ -646,12 +654,332 @@ namespace LanguageLib.Analyzers.Implementation
             return true;
         }
 
-        // считаются токены каждой переменной
-        private decimal CalculateVariableTokens(List<IToken> tokens)
+        //private decimal CalculateVariableTokens(List<IToken> tokens, bool isDivMultPart)
+        //// isDivMultPart - для рекурсивного вызова при наличии деления или умножения
+        //{
+        //    // TODO: ИДЕМ ЛИНЕЙНО, ЧЕРЕЗ SWITCH-CASE, ПРОВЕРЯЕМ ОПЕРАЦИИ УМНОЖЕНИЯ И ДЕЛЕНИЯ ТОЖЕ ЛИНЕЙНО
+        //    // TODO: С ШАГОМ ЧЕРЕЗ 1
+        //    decimal result = 0;
+
+        //    for (int i = 0; i < tokens.Count; i++)
+        //    {
+        //        var token = tokens[i];
+
+        //        switch (token.Type)
+        //        {
+        //            // если первое слово - вещественное число
+        //            case TokenType.Decimal:
+        //                result += Convert.ToDecimal(token.Value);
+        //                break;
+
+        //            #region Математические операции
+
+        //            case TokenType.Multiply:
+        //                // выделяем часть с делением/умножением
+                        
+        //                if (isDivMultPart) // если функция вызвана рекурсивно
+        //                {
+        //                    // TODO: здесь будет основной расчет, вызывается в рекурсии
+
+        //                    break;
+        //                }
+
+        //                int multiplyPartEndIndex = -1;
+
+        //                for (int j = i + 1; j < tokens.Count; j++)
+        //                {
+        //                    var nextToken = tokens[j];
+
+        //                    if (TokenIsMathOperation(nextToken) &&
+        //                        (nextToken is not DivisionToken && nextToken is not MultiplyToken))
+        //                    {
+        //                        multiplyPartEndIndex = j - 1;
+        //                    }
+        //                }
+
+        //                if (multiplyPartEndIndex == -1) // если конечный индекс не нашелся, то блок с умножением - последний
+        //                {
+        //                    multiplyPartEndIndex = tokens.Count - 1;
+        //                }
+
+        //                // собираем токены для рекурсивного вызова функции
+        //                var recursionTokens = new List<IToken>();
+                        
+        //                for (int j = i; j <= multiplyPartEndIndex; j++)
+        //                {
+        //                    recursionTokens.Add(tokens[j]);
+        //                }
+
+        //                result += CalculateVariableTokens(recursionTokens, true);
+
+        //                break;
+
+        //            case TokenType.Division:
+                        
+        //                if (isDivMultPart)
+        //                {
+        //                    // TODO: здесь будет основной расчет, вызывается в рекурсии
+        //                    break;
+        //                }
+
+
+
+        //                break;
+
+        //            case TokenType.Exp:
+        //                break;
+
+        //            case TokenType.Plus:
+        //                break;
+
+        //            case TokenType.Minus:
+        //                break;
+
+        //            #endregion
+
+        //            #region Математические функции
+
+        //            case TokenType.Sin:
+        //                break;
+
+        //            case TokenType.Cos:
+        //                break;
+
+        //            case TokenType.Tg:
+        //                break;
+
+        //            case TokenType.Ctg:
+        //                break;
+
+        //            #endregion
+        //        }
+        //    }
+
+        //    return result;
+        //}
+
+        //private decimal CalculateDivMultTokens(List<IToken> tokens)
+        //{
+        //    decimal result = 1;
+
+        //    for (int i = 0; i < tokens.Count; i++)
+        //    {
+        //        var token = tokens[i];
+
+        //        switch (token.Type) // могут быть только функции, числа, переменные, операции умножения и деления
+        //        {
+        //            case TokenType.Sin:
+        //                break;
+                    
+        //            case TokenType.Cos:
+        //                break;
+
+        //            case TokenType.Tg: 
+        //                break;
+
+        //            case TokenType.Ctg:
+        //                break;
+
+        //            case TokenType.Division:
+        //                break;
+
+        //            case TokenType.Multiply:
+        //                var rigthToken = tokens[i + 1];
+        //                if (TokenIsMathFunctionToken(rigthToken) || rigthToken is MinusToken) // возможна серия функций (sin cos cos -tg ctg 12.3)
+        //                {
+        //                    // может быть отрицательная функция (например sin -cos20)
+        //                    // собираем список токенов функции
+        //                    int functionTokensEndIndex = -1;
+        //                    for (int j = i + 1; j < tokens.Count; j++)
+        //                    {
+        //                        var _token = tokens[j];
+
+        //                        if (!TokenIsMathFunctionToken(_token) && _token is not MinusToken)
+        //                        {
+        //                            functionTokensEndIndex = j;
+        //                        }
+        //                    }
+
+        //                    // собираем список функций
+        //                    var functionTokensList = new List<IToken>();
+        //                    for (int j = i + 1; j <= functionTokensEndIndex; j++)
+        //                    {
+        //                        functionTokensList.Add(tokens[j]);
+        //                    }
+
+        //                    result *= CalculateMathFunctionTokens(functionTokensList);
+
+        //                    i = functionTokensEndIndex + 1;
+        //                    break;
+
+        //                }
+
+        //                if (rigthToken is DecimalToken)
+        //                {
+        //                    result *= Convert.ToDecimal(rigthToken.Value);
+        //                    i++;
+        //                    break;
+        //                }
+
+        //                break;
+
+        //            case TokenType.Decimal:
+        //                decimal tokenValue = Convert.ToDecimal(token.Value);
+
+        //                if (i == 0) // если вещественное число - первое в списке
+        //                {
+        //                    result = tokenValue;
+        //                    break;
+        //                }
+
+        //                if (i == 1 && tokens[0] is MinusToken) // первое слово может быть минусом
+        //                {
+        //                    result = 0 - tokenValue;
+        //                    break;
+        //                }
+
+        //                var leftToken = tokens[i - 1];
+        //                // слева может быть функция
+        //                if (TokenIsMathFunctionToken(leftToken))
+        //                {
+        //                    // если функция - первое слово
+        //                    if (i - 1 == 0)
+        //                    {
+        //                        result = GetTokenFunctionValue(leftToken, tokenValue);
+        //                        break;
+        //                    }
+
+        //                    // TODO: здесь может быть ошибка
+                            
+        //                    #warning Обязательно ли += ???...
+        //                    result += GetTokenFunctionValue(leftToken, tokenValue);
+        //                    break;
+
+        //                }
+        //                // слева знак умножения
+        //                if (leftToken is MultiplyToken)
+        //                {
+        //                    result *= Convert.ToDecimal(token.Value);
+        //                    break;
+        //                }
+        //                // слева знак деления
+        //                if (leftToken is DivisionToken)
+        //                {
+        //                    result /= Convert.ToDecimal(token.Value);
+        //                    break;
+        //                }
+        //                break;
+        //        }
+        //    }
+
+        //    return result;
+        //}
+
+
+        //private decimal GetTokenFunctionValue(IToken token, decimal value)
+        //{
+        //    switch (token.Type)
+        //    {
+        //        case TokenType.Cos:
+        //            return (decimal)Math.Cos(Convert.ToDouble(token.Value));
+
+        //        case TokenType.Sin:
+        //            return (decimal)Math.Sin(Convert.ToDouble(token.Value));
+
+        //        case TokenType.Tg:
+        //            return (decimal)Math.Tan(Convert.ToDouble(token.Value));
+
+        //        case TokenType.Ctg:
+        //            return 1 / (decimal)Math.Tan(Convert.ToDouble(token.Value));
+
+        //    }
+
+        //    return 0;
+        //}
+
+        public decimal CalculateMathFunctionTokens(List<IToken> tokens)
         {
-            // TODO: ИДЕМ ЛИНЕЙНО, ЧЕРЕЗ SWITCH-CASE, ПРОВЕРЯЕМ ОПЕРАЦИИ УМНОЖЕНИЯ И ДЕЛЕНИЯ ТОЖЕ ЛИНЕЙНО
-            // TODO: С ШАГОМ ЧЕРЕЗ 1
-            return 0;
+            decimal result = 0;
+
+            var token = tokens[0];
+
+            switch (token.Type)
+            {
+                case TokenType.Cos:
+                    return (decimal)Math.Cos((double)CalculateMathFunctionTokens(tokens.GetRange(1, tokens.Count - 1)));
+                case TokenType.Sin:
+                    return (decimal)Math.Sin((double)CalculateMathFunctionTokens(tokens.GetRange(1, tokens.Count - 1)));
+                case TokenType.Tg:
+                    return (decimal)Math.Tan((double)CalculateMathFunctionTokens(tokens.GetRange(1, tokens.Count - -1)));
+                case TokenType.Ctg:
+                    return 1 /
+                           (decimal)Math.Tan((double)CalculateMathFunctionTokens(tokens.GetRange(1, tokens.Count - 1)));
+                case TokenType.Minus:
+                    return -1 * CalculateMathFunctionTokens(tokens.GetRange(1, tokens.Count - 1));
+                case TokenType.Decimal:
+                    return Convert.ToDecimal(token.Value);
+            }
+
+            return result;
+        }
+
+
+        public decimal CalculateMathFunctionTokens2(List<IToken> tokens, decimal result)
+        {
+            var token = tokens[0];
+
+            // последнее слово - обязательно вещественное число(переменная заменяется числом в блоке выше)
+            if (tokens.Count == 1)
+            {
+                return Convert.ToDecimal(token.Value);
+            }
+
+            var nextRecursiveList = tokens.GetRange(1, tokens.Count - 1);
+
+            // TODO: реализовать порядок математических операций
+            switch (token.Type)
+            {
+                case TokenType.Cos:
+                    result = (decimal)Math.Cos((double)CalculateMathFunctionTokens2(nextRecursiveList, result));
+                    return result;
+
+                case TokenType.Sin:
+                    result = (decimal)Math.Sin((double)CalculateMathFunctionTokens2(nextRecursiveList, result));
+                    return result;
+
+                case TokenType.Tg:
+                    result = (decimal)Math.Tan((double)CalculateMathFunctionTokens2(nextRecursiveList, result));
+                    return result;
+
+                case TokenType.Ctg:
+                    result =  1 /
+                           (decimal)Math.Tan((double)CalculateMathFunctionTokens2(nextRecursiveList, result));
+                    return result;
+
+                case TokenType.Minus:
+                    result = -1 * CalculateMathFunctionTokens2(nextRecursiveList, result);
+                    return result;
+
+                case TokenType.Plus:
+                    result = CalculateMathFunctionTokens2(nextRecursiveList, result);
+                    return result;
+                
+                case TokenType.Division:
+                    result = 1 / CalculateMathFunctionTokens2(nextRecursiveList, result);
+                    return result;
+                
+                case TokenType.Multiply:
+                    result = 1 * CalculateMathFunctionTokens2(nextRecursiveList, result);
+                    return result;
+
+                case TokenType.Decimal:
+                    // TODO: не должна выходить из рекурсии
+                    
+                    result = Convert.ToDecimal(token.Value) + CalculateMathFunctionTokens2(nextRecursiveList, result);
+                    return result;
+            }
+
+            return result;
         }
 
         private bool TokenIsLinkWord(IToken token) =>
