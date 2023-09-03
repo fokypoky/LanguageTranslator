@@ -76,7 +76,7 @@ namespace LanguageLib.Analyzers.Implementation
                         continue;
                     }
 
-                    MakeToken(word, wordIndex);
+                    MakeToken(word, currentWordIndex);
                     currentWordIndex++;
                 }
             }
