@@ -222,7 +222,7 @@ namespace LanguageLib.Analyzers.Implementation
                 
                 var currentVariableNode = new VariableASTNode(currentVariableToken.Name);
 
-                currentVariableNode.Value = CalculateVariable(currentVariableTokensList);
+                currentVariableNode.Value = CalculateVariableTokens(currentVariableTokensList);
 
                 variableNodes.Add(currentVariableNode);
 
@@ -646,15 +646,12 @@ namespace LanguageLib.Analyzers.Implementation
             return true;
         }
 
-        private decimal CalculateVariable(List<IToken> tokens)
+        // считаются токены каждой переменной
+        private decimal CalculateVariableTokens(List<IToken> tokens)
         {
-            IASTNode rootNode;
-
-            var firstToken = tokens[0];
             // TODO: ИДЕМ ЛИНЕЙНО, ЧЕРЕЗ SWITCH-CASE, ПРОВЕРЯЕМ ОПЕРАЦИИ УМНОЖЕНИЯ И ДЕЛЕНИЯ ТОЖЕ ЛИНЕЙНО
             // TODO: С ШАГОМ ЧЕРЕЗ 1
-
-            throw new NotImplementedException();
+            return 0;
         }
 
         private bool TokenIsLinkWord(IToken token) =>
