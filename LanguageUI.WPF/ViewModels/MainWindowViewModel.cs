@@ -2,6 +2,7 @@
 using System.Windows.Input;
 using LanguageLib.Errors.Interfaces;
 using LanguageLib.Tokens.Interfaces;
+using LanguageUI.WPF.Domain.Repositories.Implementation;
 using LanguageUI.WPF.Inftastructure.Commands;
 using LanguageUI.WPF.ViewModels.Base;
 
@@ -13,11 +14,18 @@ namespace LanguageUI.WPF.ViewModels
         private ObservableCollection<IVariableToken> _variables;
 
         private string _inputText;
+        private string _languageDescription;
 
         public string InputText
         {
             get => _inputText;
             set => SetField(ref _inputText, value);
+        }
+
+        public string LanguageDescription
+        {
+            get => _languageDescription;
+            set => SetField(ref _languageDescription, value);
         }
 
         #region Public collections
@@ -48,6 +56,8 @@ namespace LanguageUI.WPF.ViewModels
         {
             Errors = new ObservableCollection<IError>();
             Variables = new ObservableCollection<IVariableToken>();
+
+            LanguageDescription = new FileRepository().ReadFile("LanguageDescription.txt");
         }
 
     }

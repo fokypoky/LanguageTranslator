@@ -19,7 +19,9 @@
             <Setter Property="TextBlock.FontWeight" Value="Bold"/>
         </Style>
         <Style x:Key="LanguageDescriptionTextBlockStyle">
-            
+            <Setter Property="TextBlock.TextWrapping" Value="Wrap"/>
+            <Setter Property="TextBlock.FontSize" Value="13"/>
+            <Setter Property="TextBlock.FontWeight" Value="SemiBold"/>
         </Style>
         <Style x:Key="LanguageInputTextBoxStyle">
             <Setter Property="TextBox.VerticalScrollBarVisibility" Value="Visible"/>
@@ -76,7 +78,8 @@
                        Text="Язык"/>
             
             <!--LANGUAGE DESCRIPTION-->
-            <TextBlock Grid.Row="1" Style="{StaticResource LanguageDescriptionTextBlockStyle}"/>
+            <TextBlock Grid.Row="1" Style="{StaticResource LanguageDescriptionTextBlockStyle}"
+                       Text="{Binding LanguageDescription}"/>
 
         </Grid>
 
