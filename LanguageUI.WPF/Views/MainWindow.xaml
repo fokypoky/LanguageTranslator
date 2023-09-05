@@ -10,7 +10,117 @@
     <Window.DataContext>
         <vmodel:MainWindowViewModel/>
     </Window.DataContext>
-    <Grid>
 
+    <Window.Resources>
+        <Style x:Key="LanguageHeaderTextBlockStyle">
+            <Setter Property="TextBlock.FontSize" Value="17"/>
+            <Setter Property="TextBlock.HorizontalAlignment" Value="Center"/>
+            <Setter Property="TextBlock.VerticalAlignment" Value="Center"/>
+            <Setter Property="TextBlock.FontWeight" Value="Bold"/>
+        </Style>
+        <Style x:Key="LanguageDescriptionTextBlockStyle">
+            
+        </Style>
+        <Style x:Key="LanguageInputTextBoxStyle">
+            <Setter Property="TextBox.VerticalScrollBarVisibility" Value="Visible"/>
+            <Setter Property="TextBox.TextWrapping" Value="Wrap"/>
+            <Setter Property="TextBox.IsUndoEnabled" Value="True"/>
+            <Setter Property="TextBox.AcceptsReturn" Value="True"/>
+            <Setter Property="TextBox.FontSize" Value="13"/>
+            <Setter Property="TextBox.AcceptsTab" Value="True"/>
+        </Style>
+        
+        <Style x:Key="OutputLabelTextBlockStyle">
+            <Setter Property="TextBlock.FontSize" Value="14"/>
+            <Setter Property="TextBlock.HorizontalAlignment" Value="Center"/>
+            <Setter Property="TextBlock.VerticalAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="6*"/>
+            <RowDefinition Height="0.5*"/>
+            <RowDefinition Height="2*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1"
+                BorderBrush="Black" BorderThickness="1"/>
+        <Border Grid.Column="0" Grid.Row="0" BorderBrush="Black" BorderThickness="1"/>
+        <Border Grid.Column="1" Grid.Row="0" BorderBrush="Black" BorderThickness="1"/>
+
+        <!--INPUT-->
+        <Grid Grid.Column="0" Grid.Row="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="13*"/>
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Style="{StaticResource LanguageHeaderTextBlockStyle}"
+                       Text="Ввод"/>
+            <TextBox Grid.Row="1" Style="{StaticResource LanguageInputTextBoxStyle}"/>
+        </Grid>
+        
+        <!--LANGUAGE DESCRIPTION-->
+        <Grid Grid.Column="1" Grid.Row="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="13*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Style="{StaticResource LanguageHeaderTextBlockStyle}"
+                       Text="Язык"/>
+            
+            <!--LANGUAGE DESCRIPTION-->
+            <TextBlock Grid.Row="1" Style="{StaticResource LanguageDescriptionTextBlockStyle}"/>
+
+        </Grid>
+
+        <!--COMPUTE BUTTON-->
+        <Button Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                Content="Рассчитать"/>
+
+        <!--OUTPUT-->
+        <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="4.3*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="1"
+                       Style="{StaticResource OutputLabelTextBlockStyle}"
+                       Text="Ошибки"/>
+
+            <ListView Grid.Column="0" Grid.Row="1">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Переменная"/>
+                        <GridViewColumn Header="Значение"/>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+            
+            
+            <TextBlock Grid.Row="0" Grid.Column="0"
+                       Style="{StaticResource OutputLabelTextBlockStyle}"
+                       Text="Вывод"/>
+
+            <ListView Grid.Column="1" Grid.Row="1">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Ошибка"/>
+                        <GridViewColumn Header="Позиция"/>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+
+        </Grid>
     </Grid>
 </Window>
