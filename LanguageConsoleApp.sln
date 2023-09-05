@@ -5,7 +5,9 @@ VisualStudioVersion = 17.6.33829.357
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LanguageConsoleApp", "LanguageConsoleApp\LanguageConsoleApp.csproj", "{99387EDE-8014-45EB-961A-987F93A9F83D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LanguageLib", "LanguageLib\LanguageLib.csproj", "{EA678310-D0B1-46E1-8897-63EF90AEB3A8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LanguageLib", "LanguageLib\LanguageLib.csproj", "{EA678310-D0B1-46E1-8897-63EF90AEB3A8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LanguageUI.WPF", "LanguageUI.WPF\LanguageUI.WPF.csproj", "{4A5A6DBB-8E7C-43CB-A6A1-309B24FCBA95}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{EA678310-D0B1-46E1-8897-63EF90AEB3A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EA678310-D0B1-46E1-8897-63EF90AEB3A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EA678310-D0B1-46E1-8897-63EF90AEB3A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A5A6DBB-8E7C-43CB-A6A1-309B24FCBA95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A5A6DBB-8E7C-43CB-A6A1-309B24FCBA95}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A5A6DBB-8E7C-43CB-A6A1-309B24FCBA95}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A5A6DBB-8E7C-43CB-A6A1-309B24FCBA95}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
