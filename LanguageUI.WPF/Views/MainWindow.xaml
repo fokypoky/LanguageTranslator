@@ -61,7 +61,8 @@
             </Grid.RowDefinitions>
             <TextBlock Grid.Row="0" Style="{StaticResource LanguageHeaderTextBlockStyle}"
                        Text="Ввод"/>
-            <TextBox Grid.Row="1" Style="{StaticResource LanguageInputTextBoxStyle}"/>
+            <TextBox Grid.Row="1" Style="{StaticResource LanguageInputTextBoxStyle}"
+                     Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"/>
         </Grid>
         
         <!--LANGUAGE DESCRIPTION-->
@@ -81,7 +82,8 @@
 
         <!--COMPUTE BUTTON-->
         <Button Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
-                Content="Рассчитать"/>
+                Content="Рассчитать"
+                Command="{Binding HandleCodeCommand}"/>
 
         <!--OUTPUT-->
         <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
@@ -94,29 +96,28 @@
                 <RowDefinition Height="4.3*"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" Grid.Column="1"
-                       Style="{StaticResource OutputLabelTextBlockStyle}"
-                       Text="Ошибки"/>
-
-            <ListView Grid.Column="0" Grid.Row="1">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn Header="Переменная"/>
-                        <GridViewColumn Header="Значение"/>
-                    </GridView>
-                </ListView.View>
-            </ListView>
-            
-            
             <TextBlock Grid.Row="0" Grid.Column="0"
                        Style="{StaticResource OutputLabelTextBlockStyle}"
                        Text="Вывод"/>
 
-            <ListView Grid.Column="1" Grid.Row="1">
+            <ListView Grid.Column="0" Grid.Row="1" ItemsSource="{Binding Variables}">
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="Ошибка"/>
-                        <GridViewColumn Header="Позиция"/>
+                        <GridViewColumn Header="Переменная" DisplayMemberBinding="{Binding Name}"/>
+                        <GridViewColumn Header="Значение" DisplayMemberBinding="{Binding Value}"/>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+
+            <TextBlock Grid.Row="0" Grid.Column="1"
+                       Style="{StaticResource OutputLabelTextBlockStyle}"
+                       Text="Ошибки"/>
+
+            <ListView Grid.Column="1" Grid.Row="1" ItemsSource="{Binding Errors}">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Ошибка" DisplayMemberBinding="{Binding Message}"/>
+                        <GridViewColumn Header="Позиция" DisplayMemberBinding="{Binding Position}"/>
                     </GridView>
                 </ListView.View>
             </ListView>
