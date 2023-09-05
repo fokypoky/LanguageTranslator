@@ -1,5 +1,9 @@
 ﻿using System.Data;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.JavaScript;
+using System.Text;
 using LanguageLib.Analyzers.Interfaces;
 using LanguageLib.AST.Implementation.Nodes.MathOperations;
 using LanguageLib.AST.Implementation.Nodes.NumericValues;
@@ -16,6 +20,7 @@ using LanguageLib.Tokens.Implementation.Other;
 using LanguageLib.Tokens.Interfaces;
 using LanguageLib.AST.Implementation.Nodes.Variables;
 using LanguageLib.AST.Interfaces;
+using org.mariuszgromada.math.mxparser;
 
 namespace LanguageLib.Analyzers.Implementation
 {
@@ -24,6 +29,8 @@ namespace LanguageLib.Analyzers.Implementation
         public List<IError> Errors { get; set; }
         public List<IToken> Tokens { get; set; }
         public IAST AST { get; set; }
+
+        public List<IVariableToken> Variables { get; set; }
 
         public int ErrorsCount
         {
@@ -37,6 +44,7 @@ namespace LanguageLib.Analyzers.Implementation
         {
             Tokens = tokens;
             Errors = new List<IError>();
+            Variables = new List<IVariableToken>();
         }
 
         public void Analyze()
@@ -179,7 +187,6 @@ namespace LanguageLib.Analyzers.Implementation
                 }
             }
 
-            var variableNodes = new List<IVariableAstNode>();
 
             // собираем дерево
             for (int tokenIndex = 0; tokenIndex < variablesStartIndexes.Count; tokenIndex++)
@@ -196,7 +203,7 @@ namespace LanguageLib.Analyzers.Implementation
 
                 if (tokenIndex == variablesStartIndexes.Count - 1) // если текущая переменная последняя
                 {
-                    nextVariableGlobalTokenIndex = Tokens.Count - 1;
+                    nextVariableGlobalTokenIndex = Tokens.Count - 2;
                 }
                 else // если не последняя
                 {
@@ -221,18 +228,44 @@ namespace LanguageLib.Analyzers.Implementation
 
                 #endregion
 
-                /*var currentVariableToken = (VariableToken)Tokens[currentTokenGlobalIndex];
-                
-                var currentVariableNode = new VariableASTNode(currentVariableToken.Name);
+                // Замена переменных на вещесвенные числа 
 
-                currentVariableNode.Value = CalculateVariableTokens(currentVariableTokensList);
+                foreach (var token in currentVariableTokensList)
+                {
+                    if (token is VariableToken)
+                    {
+                        var _token = (VariableToken)token;
+                        foreach (var variableToken in Variables)
+                        {
+                            if (_token.Name == variableToken.Name)
+                            {
+                                _token.Value = variableToken.Value;
+                            }
+                        }
+                    }
+                }
 
-                variableNodes.Add(currentVariableNode);
-                */
+                // Перевод вещественных чисел из 8й СИ в 10ю СИ
+                for (int i = 0; i < currentVariableTokensList.Count; i++)
+                {
+                    if (currentVariableTokensList[i] is DecimalToken)
+                    {
+                        var token = currentVariableTokensList[i];
+                        var parts = token.Value.Split('.');
 
-                // TODO: сделать замену переменной (в определении) на вещественное число
+                        decimal leftPart = Convert.ToInt32(parts[0], 8);
+                        decimal rightPart = Convert.ToInt32(parts[1], 8);
 
-                decimal variableValue = CalculateMathFunctionTokens2(currentVariableTokensList, 0);
+                        currentVariableTokensList[i] = new DecimalToken().GetTokenObject($"{leftPart}.{rightPart}", token.Position);
+                    }
+                }
+
+                var result = CalculateVariableValue(currentVariableTokensList);
+
+                var variable = Tokens[currentTokenGlobalIndex];
+                variable.Value = result.ToString();
+
+                Variables.Add((IVariableToken) variable);
 
             }
             
@@ -654,343 +687,312 @@ namespace LanguageLib.Analyzers.Implementation
             return true;
         }
 
-        //private decimal CalculateVariableTokens(List<IToken> tokens, bool isDivMultPart)
-        //// isDivMultPart - для рекурсивного вызова при наличии деления или умножения
-        //{
-        //    // TODO: ИДЕМ ЛИНЕЙНО, ЧЕРЕЗ SWITCH-CASE, ПРОВЕРЯЕМ ОПЕРАЦИИ УМНОЖЕНИЯ И ДЕЛЕНИЯ ТОЖЕ ЛИНЕЙНО
-        //    // TODO: С ШАГОМ ЧЕРЕЗ 1
-        //    decimal result = 0;
+        public decimal CalculateVariableValue(List<IToken> tokens)
+        {
+            decimal result = 0;
 
-        //    for (int i = 0; i < tokens.Count; i++)
-        //    {
-        //        var token = tokens[i];
+            #region Функции
 
-        //        switch (token.Type)
-        //        {
-        //            // если первое слово - вещественное число
-        //            case TokenType.Decimal:
-        //                result += Convert.ToDecimal(token.Value);
-        //                break;
+            var funcTokensSeries = new List<FuncTokensSeria>();
 
-        //            #region Математические операции
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                if (TokenIsMathFunctionToken(tokens[i]))
+                {
+                    var seria = new FuncTokensSeria();
+                    seria.StartIndex = i;
 
-        //            case TokenType.Multiply:
-        //                // выделяем часть с делением/умножением
-                        
-        //                if (isDivMultPart) // если функция вызвана рекурсивно
-        //                {
-        //                    // TODO: здесь будет основной расчет, вызывается в рекурсии
+                    // поиск конца серии токенов
+                    for (int j = i + 1; j < tokens.Count; j++)
+                    {
+                        var token = tokens[j];
 
-        //                    break;
-        //                }
+                        if (j == tokens.Count - 1)
+                        {
+                            seria.EndIndex = tokens.Count - 1;
+                            i = tokens.Count - 1;
+                            funcTokensSeries.Add(seria);
+                            break;
+                        }
 
-        //                int multiplyPartEndIndex = -1;
+                        if (TokenIsMathFunctionToken(token))
+                        {
+                            if (token is DecimalToken && (tokens[j + 1] is not ExpToken))
+                            {
+                                //funcTokensEndIndex = j;
+                                seria.EndIndex = j;
+                                i = j;
+                                funcTokensSeries.Add(seria);
+                                break;
+                            }
 
-        //                for (int j = i + 1; j < tokens.Count; j++)
-        //                {
-        //                    var nextToken = tokens[j];
+                            if (token is PlusToken || token is MultiplyToken || token is DivisionToken)
+                            {
+                                //funcTokensEndIndex = j - 1;
+                                seria.EndIndex = j - 1;
+                                i = j - 1;
+                                funcTokensSeries.Add(seria);
+                                break;
+                            }
 
-        //                    if (TokenIsMathOperation(nextToken) &&
-        //                        (nextToken is not DivisionToken && nextToken is not MultiplyToken))
-        //                    {
-        //                        multiplyPartEndIndex = j - 1;
-        //                    }
-        //                }
+                            // вышли за границы функций
+                            if (token is MinusToken && (tokens[j + 1] is not DecimalToken &&
+                                                        !TokenIsMathFunctionToken(tokens[j + 1])))
+                            {
+                                //funcTokensEndIndex = j - 1;
+                                seria.EndIndex = j - 1;
+                                i = j - 1;
+                                funcTokensSeries.Add(seria);
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
+                }
+            }
 
-        //                if (multiplyPartEndIndex == -1) // если конечный индекс не нашелся, то блок с умножением - последний
-        //                {
-        //                    multiplyPartEndIndex = tokens.Count - 1;
-        //                }
+            var newTokensList = new List<IToken>();
+            foreach (var token in tokens)
+            {
+                newTokensList.Add(token);
+            }
 
-        //                // собираем токены для рекурсивного вызова функции
-        //                var recursionTokens = new List<IToken>();
-                        
-        //                for (int j = i; j <= multiplyPartEndIndex; j++)
-        //                {
-        //                    recursionTokens.Add(tokens[j]);
-        //                }
+            foreach (var seria in funcTokensSeries)
+            {
+                // 1. Рассчитываем значение функции
+                var currentSeriaTokensList =
+                    tokens.GetRange(seria.StartIndex, seria.EndIndex - seria.StartIndex + 1);
+                decimal funcResult = CalculateMathFunctionTokens(currentSeriaTokensList);
 
-        //                result += CalculateVariableTokens(recursionTokens, true);
+                var funcResultToken =
+                    new DecimalToken().GetTokenObject(funcResult.ToString(), tokens[seria.StartIndex].Position);
 
-        //                break;
+                // 2. Убираем токены, принадлежащие к этой функции
 
-        //            case TokenType.Division:
-                        
-        //                if (isDivMultPart)
-        //                {
-        //                    // TODO: здесь будет основной расчет, вызывается в рекурсии
-        //                    break;
-        //                }
+                // 2.1. Собираем токены, идущие до серии
+                var previousTokensList = new List<IToken>();
 
+                int startIndex = newTokensList.IndexOf(tokens[seria.StartIndex]);
+                int endIndex = newTokensList.IndexOf(tokens[seria.EndIndex]);
 
+                for (int i = 0; i < startIndex; i++)
+                {
+                    previousTokensList.Add(newTokensList[i]);
+                }
 
-        //                break;
+                // 2.2. Добавляем рассчитанное значение функции
+                previousTokensList.Add(funcResultToken);
 
-        //            case TokenType.Exp:
-        //                break;
+                // 2.3. Добавляем оставшуюся часть
+                for (int i = endIndex + 1; i < newTokensList.Count; i++)
+                {
+                    previousTokensList.Add(newTokensList[i]);
+                }
 
-        //            case TokenType.Plus:
-        //                break;
+                // 2.4. Восстанавливаем последовательность
+                newTokensList.Clear();
+                foreach (var token in previousTokensList)
+                {
+                    newTokensList.Add(token);
+                }
+            }
+            #endregion
 
-        //            case TokenType.Minus:
-        //                break;
+            #region Степени
 
-        //            #endregion
+            var debug = newTokensList;
+            var powTokensSeries = new List<PowTokensSeria>();
 
-        //            #region Математические функции
+            for (int i = 0; i < newTokensList.Count; i++)
+            {
+                var token = newTokensList[i];
 
-        //            case TokenType.Sin:
-        //                break;
+                if (token is DecimalToken)
+                {
+                    if (i + 1 < newTokensList.Count - 1 && newTokensList[i + 1] is ExpToken)
+                    {
+                        var seria = new PowTokensSeria();
+                        seria.StartIndex = i;
 
-        //            case TokenType.Cos:
-        //                break;
+                        // поиск конца серии
+                        for (int j = i + 1; j < tokens.Count; j++) // newTokensList[j] изначально = "^" 
+                        {
+                            var nextToken = newTokensList[j];
 
-        //            case TokenType.Tg:
-        //                break;
+                            if (j == newTokensList.Count - 1)
+                            {
+                                seria.EndIndex = j;
+                                powTokensSeries.Add(seria);
+                                i = j;
+                                break;
+                            }
 
-        //            case TokenType.Ctg:
-        //                break;
+                            if (nextToken is MinusToken)
+                            {
+                                if (j + 2 < tokens.Count && newTokensList[j + 2] is not ExpToken)
+                                {
+                                    seria.EndIndex = j + 1;
+                                    powTokensSeries.Add(seria);
+                                    i = j + 1;
+                                    break;
+                                }
+                            }
 
-        //            #endregion
-        //        }
-        //    }
+                            if (nextToken is not DecimalToken && nextToken is not MinusToken &&
+                                nextToken is not ExpToken)
+                            {
+                                seria.EndIndex = j - 1;
+                                powTokensSeries.Add(seria);
+                                i = j;
+                                break;
+                            }
 
-        //    return result;
-        //}
+                        }
 
-        //private decimal CalculateDivMultTokens(List<IToken> tokens)
-        //{
-        //    decimal result = 1;
+                    }
+                }
+            }
 
-        //    for (int i = 0; i < tokens.Count; i++)
-        //    {
-        //        var token = tokens[i];
-
-        //        switch (token.Type) // могут быть только функции, числа, переменные, операции умножения и деления
-        //        {
-        //            case TokenType.Sin:
-        //                break;
-                    
-        //            case TokenType.Cos:
-        //                break;
-
-        //            case TokenType.Tg: 
-        //                break;
-
-        //            case TokenType.Ctg:
-        //                break;
-
-        //            case TokenType.Division:
-        //                break;
-
-        //            case TokenType.Multiply:
-        //                var rigthToken = tokens[i + 1];
-        //                if (TokenIsMathFunctionToken(rigthToken) || rigthToken is MinusToken) // возможна серия функций (sin cos cos -tg ctg 12.3)
-        //                {
-        //                    // может быть отрицательная функция (например sin -cos20)
-        //                    // собираем список токенов функции
-        //                    int functionTokensEndIndex = -1;
-        //                    for (int j = i + 1; j < tokens.Count; j++)
-        //                    {
-        //                        var _token = tokens[j];
-
-        //                        if (!TokenIsMathFunctionToken(_token) && _token is not MinusToken)
-        //                        {
-        //                            functionTokensEndIndex = j;
-        //                        }
-        //                    }
-
-        //                    // собираем список функций
-        //                    var functionTokensList = new List<IToken>();
-        //                    for (int j = i + 1; j <= functionTokensEndIndex; j++)
-        //                    {
-        //                        functionTokensList.Add(tokens[j]);
-        //                    }
-
-        //                    result *= CalculateMathFunctionTokens(functionTokensList);
-
-        //                    i = functionTokensEndIndex + 1;
-        //                    break;
-
-        //                }
-
-        //                if (rigthToken is DecimalToken)
-        //                {
-        //                    result *= Convert.ToDecimal(rigthToken.Value);
-        //                    i++;
-        //                    break;
-        //                }
-
-        //                break;
-
-        //            case TokenType.Decimal:
-        //                decimal tokenValue = Convert.ToDecimal(token.Value);
-
-        //                if (i == 0) // если вещественное число - первое в списке
-        //                {
-        //                    result = tokenValue;
-        //                    break;
-        //                }
-
-        //                if (i == 1 && tokens[0] is MinusToken) // первое слово может быть минусом
-        //                {
-        //                    result = 0 - tokenValue;
-        //                    break;
-        //                }
-
-        //                var leftToken = tokens[i - 1];
-        //                // слева может быть функция
-        //                if (TokenIsMathFunctionToken(leftToken))
-        //                {
-        //                    // если функция - первое слово
-        //                    if (i - 1 == 0)
-        //                    {
-        //                        result = GetTokenFunctionValue(leftToken, tokenValue);
-        //                        break;
-        //                    }
-
-        //                    // TODO: здесь может быть ошибка
-                            
-        //                    #warning Обязательно ли += ???...
-        //                    result += GetTokenFunctionValue(leftToken, tokenValue);
-        //                    break;
-
-        //                }
-        //                // слева знак умножения
-        //                if (leftToken is MultiplyToken)
-        //                {
-        //                    result *= Convert.ToDecimal(token.Value);
-        //                    break;
-        //                }
-        //                // слева знак деления
-        //                if (leftToken is DivisionToken)
-        //                {
-        //                    result /= Convert.ToDecimal(token.Value);
-        //                    break;
-        //                }
-        //                break;
-        //        }
-        //    }
-
-        //    return result;
-        //}
+            var finallyTokensList = new List<IToken>();
+            foreach (var token in newTokensList)
+            {
+                finallyTokensList.Add(token);
+            }
 
 
-        //private decimal GetTokenFunctionValue(IToken token, decimal value)
-        //{
-        //    switch (token.Type)
-        //    {
-        //        case TokenType.Cos:
-        //            return (decimal)Math.Cos(Convert.ToDouble(token.Value));
 
-        //        case TokenType.Sin:
-        //            return (decimal)Math.Sin(Convert.ToDouble(token.Value));
+            foreach (var seria in powTokensSeries)
+            {
+                var currentSeriaPowTokens =
+                    newTokensList.GetRange(seria.StartIndex, seria.EndIndex - seria.StartIndex + 1);
+                var currentSeriaTokensValue = CalculateExpTokensValue(currentSeriaPowTokens);
 
-        //        case TokenType.Tg:
-        //            return (decimal)Math.Tan(Convert.ToDouble(token.Value));
 
-        //        case TokenType.Ctg:
-        //            return 1 / (decimal)Math.Tan(Convert.ToDouble(token.Value));
+                int startIndex = finallyTokensList.IndexOf(newTokensList[seria.StartIndex]);
+                int endIndex = finallyTokensList.IndexOf(newTokensList[seria.EndIndex]);
 
-        //    }
+                var newList = new List<IToken>();
 
-        //    return 0;
-        //}
+                for (int i = 0; i < startIndex; i++)
+                {
+                    newList.Add(finallyTokensList[i]);
+                }
+
+                newList.Add(new DecimalToken().GetTokenObject(currentSeriaTokensValue.ToString(), finallyTokensList[startIndex].Position));
+
+                for (int i = endIndex + 1; i < finallyTokensList.Count; i++)
+                {
+                    newList.Add(finallyTokensList[i]);
+                }
+
+                finallyTokensList.Clear();
+
+                foreach (var token in newList)
+                {
+                    finallyTokensList.Add(token);
+                }
+            }
+
+            #endregion
+
+            var computer = new DataTable();
+            try
+            {
+                var computerInputStringBuilder = new StringBuilder();
+                foreach (var token in finallyTokensList)
+                {
+                    computerInputStringBuilder.Append(token.Value + " ");
+                }
+                result = (decimal)computer.Compute(computerInputStringBuilder.ToString(), " ");
+            }
+            catch (DivideByZeroException)
+            {
+                Errors.Add(new SyntacticalError("В выражении Присутствует деление на 0", 0));
+            }
+            catch (OverflowException)
+            {
+                Errors.Add(new SyntacticalError("Полученное значение слишком большое или слишком маленькое", 0));
+            }
+
+            return result;
+        }
+
 
         public decimal CalculateMathFunctionTokens(List<IToken> tokens)
         {
             decimal result = 0;
 
             var token = tokens[0];
-
+            if (tokens.Count == 1)
+            {
+                return Convert.ToDecimal(tokens[0].Value);
+            }
             switch (token.Type)
             {
+                // TODO: добавить степень
+                //case TokenType.Exp:
+                //    // получаем предыдущее значение
+                //    var previousDecimalTokenValue = Convert.ToDecimal(Tokens[token.Position - 1].Value);
+                //    return (decimal)Math.Pow((double)previousDecimalTokenValue,
+                //        (double)CalculateMathFunctionTokens(tokens.GetRange(1, tokens.Count - 1)));
                 case TokenType.Cos:
                     return (decimal)Math.Cos((double)CalculateMathFunctionTokens(tokens.GetRange(1, tokens.Count - 1)));
                 case TokenType.Sin:
                     return (decimal)Math.Sin((double)CalculateMathFunctionTokens(tokens.GetRange(1, tokens.Count - 1)));
                 case TokenType.Tg:
-                    return (decimal)Math.Tan((double)CalculateMathFunctionTokens(tokens.GetRange(1, tokens.Count - -1)));
+                    return (decimal)Math.Tan((double)CalculateMathFunctionTokens(tokens.GetRange(1, tokens.Count -1)));
                 case TokenType.Ctg:
                     return 1 /
                            (decimal)Math.Tan((double)CalculateMathFunctionTokens(tokens.GetRange(1, tokens.Count - 1)));
                 case TokenType.Minus:
                     return -1 * CalculateMathFunctionTokens(tokens.GetRange(1, tokens.Count - 1));
                 case TokenType.Decimal:
-                    return Convert.ToDecimal(token.Value);
+                    return (decimal)Math.Pow((double)Convert.ToDecimal(token.Value),
+                        (double)CalculateMathFunctionTokens(tokens.GetRange(2, tokens.Count - 2)));
+                    
             }
 
             return result;
         }
 
-
-        public decimal CalculateMathFunctionTokens2(List<IToken> tokens, decimal result)
+        public decimal CalculateExpTokensValue(List<IToken> tokens)
         {
-            var token = tokens[0];
+            decimal result = 0;
 
-            // последнее слово - обязательно вещественное число(переменная заменяется числом в блоке выше)
             if (tokens.Count == 1)
             {
-                return Convert.ToDecimal(token.Value);
+                return Convert.ToDecimal(tokens[0].Value);
             }
 
-            var nextRecursiveList = tokens.GetRange(1, tokens.Count - 1);
-
-            // TODO: реализовать порядок математических операций
-            switch (token.Type)
+            switch (tokens[0].Type)
             {
-                case TokenType.Cos:
-                    result = (decimal)Math.Cos((double)CalculateMathFunctionTokens2(nextRecursiveList, result));
-                    return result;
-
-                case TokenType.Sin:
-                    result = (decimal)Math.Sin((double)CalculateMathFunctionTokens2(nextRecursiveList, result));
-                    return result;
-
-                case TokenType.Tg:
-                    result = (decimal)Math.Tan((double)CalculateMathFunctionTokens2(nextRecursiveList, result));
-                    return result;
-
-                case TokenType.Ctg:
-                    result =  1 /
-                           (decimal)Math.Tan((double)CalculateMathFunctionTokens2(nextRecursiveList, result));
-                    return result;
-
                 case TokenType.Minus:
-                    result = -1 * CalculateMathFunctionTokens2(nextRecursiveList, result);
+                    result = 0 - CalculateExpTokensValue(tokens.GetRange(1, tokens.Count - 1));
                     return result;
-
-                case TokenType.Plus:
-                    result = CalculateMathFunctionTokens2(nextRecursiveList, result);
+                case TokenType.Exp:
+                    result = CalculateExpTokensValue(tokens.GetRange(1, tokens.Count - 1));
                     return result;
-                
-                case TokenType.Division:
-                    result = 1 / CalculateMathFunctionTokens2(nextRecursiveList, result);
-                    return result;
-                
-                case TokenType.Multiply:
-                    result = 1 * CalculateMathFunctionTokens2(nextRecursiveList, result);
-                    return result;
-
                 case TokenType.Decimal:
-                    // TODO: не должна выходить из рекурсии
-                    
-                    result = Convert.ToDecimal(token.Value) + CalculateMathFunctionTokens2(nextRecursiveList, result);
+                    result = (decimal)Math.Pow(Convert.ToDouble(tokens[0].Value),
+                        (double)CalculateExpTokensValue(tokens.GetRange(1, tokens.Count - 1)));
                     return result;
             }
 
             return result;
         }
-
+        
         private bool TokenIsLinkWord(IToken token) =>
             token is FirstToken || token is SecondToken || token is ThirdToken || token is FourthToken;
 
-        private bool TokenIsMathFunctionToken(IToken token)
+        public bool TokenIsMathFunctionToken(IToken token)
         {
             return token is SinToken || token is CosToken || token is TgToken || token is CtgToken;
         }
 
-        private bool TokenIsMathOperation(IToken token)
+        public bool TokenIsMathOperation(IToken token)
         {
             return token is PlusToken || token is MinusToken || token is MultiplyToken || token is DivisionToken ||
                    token is ExpToken;
