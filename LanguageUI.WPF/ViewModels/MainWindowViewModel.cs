@@ -51,6 +51,8 @@ namespace LanguageUI.WPF.ViewModels
         {
             get => new RelayCommand((object parameter) =>
             {
+                Errors?.Clear();
+
                 if (String.IsNullOrEmpty(InputText))
                 {
                     Errors.Add(new SyntacticalError("Введенный текст пустой", 0));
