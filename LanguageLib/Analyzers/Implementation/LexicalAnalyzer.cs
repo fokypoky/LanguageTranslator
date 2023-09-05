@@ -39,8 +39,7 @@ namespace LanguageLib.Analyzers.Implementation
                 new StartToken(), new StopToken(),
                 new FirstToken(), new SecondToken(),
                 new ThirdToken(), new FourthToken(),
-                new SinToken(), new CosToken(),
-                new TgToken(), new CtgToken(),
+                new SinToken(), new CosToken(), new TgToken(),
                 new IntegerToken(), new DecimalToken(),
                 new VariableToken(), 
                 new PlusToken(), new MinusToken(),
@@ -93,7 +92,7 @@ namespace LanguageLib.Analyzers.Implementation
                 .Replace("^", " ^ ")
                 .Replace("=", " = ")
                 .Replace("sin", " sin ").Replace("cos", " cos ")
-                .Replace("tg", " tg ").Replace("ctg", " ctg ");
+                .Replace("tg", " tg ");
 
             _text = cleanerStringBuilder.ToString();
 

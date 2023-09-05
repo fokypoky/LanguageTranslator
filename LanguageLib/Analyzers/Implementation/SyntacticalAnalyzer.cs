@@ -104,7 +104,7 @@ namespace LanguageLib.Analyzers.Implementation
 
             if (linkTokensEndIndex == -1)
             {
-                Errors.Add(new SyntacticalError("Токены не найдены", 1));
+                Errors.Add(new SyntacticalError("Токены звена не найдены", 1));
                 return;
             }
 
@@ -230,37 +230,43 @@ namespace LanguageLib.Analyzers.Implementation
 
                 // Замена переменных на вещесвенные числа 
 
-                foreach (var token in currentVariableTokensList)
+                for (int i = 0; i < currentVariableTokensList.Count; i++)
                 {
-                    if (token is VariableToken)
+                    if (currentVariableTokensList[i] is VariableToken)
                     {
-                        var _token = (VariableToken)token;
+                        var _token = (VariableToken)currentVariableTokensList[i];
                         foreach (var variableToken in Variables)
                         {
                             if (_token.Name == variableToken.Name)
                             {
-                                _token.Value = variableToken.Value;
+                                currentVariableTokensList[i] =
+                                    new DecimalToken().GetTokenObject(variableToken.Value, _token.Position);
                             }
                         }
                     }
                 }
 
-                // Перевод вещественных чисел из 8й СИ в 10ю СИ
-                for (int i = 0; i < currentVariableTokensList.Count; i++)
-                {
-                    if (currentVariableTokensList[i] is DecimalToken)
-                    {
-                        var token = currentVariableTokensList[i];
-                        var parts = token.Value.Split('.');
+                // перевод в 10ю СС
+                //for (int i = 0; i < currentVariableTokensList.Count; i++)
+                //{
+                //    if (currentVariableTokensList[i] is DecimalToken)
+                //    {
+                //        var parts = currentVariableTokensList[i].Value.Split('.');
 
-                        decimal leftPart = Convert.ToInt32(parts[0], 8);
-                        decimal rightPart = Convert.ToInt32(parts[1], 8);
+                //        int leftPart = Convert.ToInt32(parts[0], 8);
+                //        int rightPart = Convert.ToInt32(parts[1], 8);
 
-                        currentVariableTokensList[i] = new DecimalToken().GetTokenObject($"{leftPart}.{rightPart}", token.Position);
-                    }
-                }
-
+                //        currentVariableTokensList[i] = new DecimalToken().GetTokenObject($"{leftPart}.{rightPart}",
+                //            currentVariableTokensList[i].Position);
+                //    }
+                //}
+                
+                // TODO: перевести из восьмиричной в десятичную
                 var result = CalculateVariableValue(currentVariableTokensList);
+                if (ErrorsCount > 0)
+                {
+                    return;
+                }
 
                 var variable = Tokens[currentTokenGlobalIndex];
                 variable.Value = result.ToString();
@@ -765,7 +771,17 @@ namespace LanguageLib.Analyzers.Implementation
                 // 1. Рассчитываем значение функции
                 var currentSeriaTokensList =
                     tokens.GetRange(seria.StartIndex, seria.EndIndex - seria.StartIndex + 1);
-                decimal funcResult = CalculateMathFunctionTokens(currentSeriaTokensList);
+
+                decimal funcResult = 0;
+                try
+                {
+                    funcResult = CalculateMathFunctionTokens(currentSeriaTokensList);
+                }
+                catch (OverflowException)
+                {
+                    Errors.Add(new SyntacticalError("Значение функции слишком велико или слишком мало", seria.StartIndex));
+                    return 0;
+                }
 
                 var funcResultToken =
                     new DecimalToken().GetTokenObject(funcResult.ToString(), tokens[seria.StartIndex].Position);
@@ -989,7 +1005,7 @@ namespace LanguageLib.Analyzers.Implementation
 
         public bool TokenIsMathFunctionToken(IToken token)
         {
-            return token is SinToken || token is CosToken || token is TgToken || token is CtgToken;
+            return token is SinToken || token is CosToken || token is TgToken;
         }
 
         public bool TokenIsMathOperation(IToken token)
