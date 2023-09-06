@@ -1,13 +1,6 @@
 ﻿using System.Data;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.JavaScript;
 using System.Text;
 using LanguageLib.Analyzers.Interfaces;
-using LanguageLib.AST.Implementation.Nodes.MathOperations;
-using LanguageLib.AST.Implementation.Nodes.NumericValues;
-using LanguageLib.AST.Implementation.Nodes.Root;
 using LanguageLib.AST.Interfaces;
 using LanguageLib.Errors;
 using LanguageLib.Errors.Interfaces;
@@ -18,9 +11,6 @@ using LanguageLib.Tokens.Implementation.MathOperations;
 using LanguageLib.Tokens.Implementation.NumberTokens;
 using LanguageLib.Tokens.Implementation.Other;
 using LanguageLib.Tokens.Interfaces;
-using LanguageLib.AST.Implementation.Nodes.Variables;
-using LanguageLib.AST.Interfaces;
-using org.mariuszgromada.math.mxparser;
 
 namespace LanguageLib.Analyzers.Implementation
 {
