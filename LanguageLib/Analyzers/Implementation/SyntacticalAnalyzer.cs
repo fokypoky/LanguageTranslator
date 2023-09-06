@@ -788,61 +788,6 @@ namespace LanguageLib.Analyzers.Implementation
                                 break;
                             }
                         }
-
-                        //if (TokenIsMathFunctionToken(token))
-                        //{
-                        //    //if (token is DecimalToken && tokens[j + 1] is not ExpToken)
-                        //    //{
-                        //    //    seria.EndIndex = j;
-                        //    //    i = j;
-                        //    //    funcTokensSeries.Add(seria);
-                        //    //    break;
-                        //    //}
-
-                        //    if (!TokenIsMathFunctionToken(token) && token is not DecimalToken && token is not ExpToken)
-                        //    {
-                        //        if (j - 1 >= 0 && token is MinusToken && !TokenIsMathFunctionToken(tokens[j - 1]))
-                        //        {
-                        //            seria.EndIndex = j - 1;
-                        //            i = j - 1;
-                        //            funcTokensSeries.Add(seria);
-                        //            break;
-                        //        }
-                        //        seria.EndIndex = j;
-                        //        i = j;
-                        //        funcTokensSeries.Add(seria);
-                        //        break;
-                        //    }
-                        //    //if(TokenIsMathOperation(token) && )
-                        //    //if (token is DecimalToken && (tokens[j + 1] is not ExpToken))
-                        //    //{
-                        //    //    //funcTokensEndIndex = j;
-                        //    //    seria.EndIndex = j;
-                        //    //    i = j;
-                        //    //    funcTokensSeries.Add(seria);
-                        //    //    break;
-                        //    //}
-
-                        //    //if (token is PlusToken || token is MultiplyToken || token is DivisionToken)
-                        //    //{
-                        //    //    //funcTokensEndIndex = j - 1;
-                        //    //    seria.EndIndex = j - 1;
-                        //    //    i = j - 1;
-                        //    //    funcTokensSeries.Add(seria);
-                        //    //    break;
-                        //    //}
-
-                        //    //// вышли за границы функций
-                        //    //if (token is MinusToken && (tokens[j + 1] is not DecimalToken &&
-                        //    //                            !TokenIsMathFunctionToken(tokens[j + 1])))
-                        //    //{
-                        //    //    //funcTokensEndIndex = j - 1;
-                        //    //    seria.EndIndex = j - 1;
-                        //    //    i = j - 1;
-                        //    //    funcTokensSeries.Add(seria);
-                        //    //    break;
-                        //    //}
-                        //}
                     }
                 }
             }
