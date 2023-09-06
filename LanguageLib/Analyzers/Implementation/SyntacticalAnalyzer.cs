@@ -246,20 +246,6 @@ namespace LanguageLib.Analyzers.Implementation
                     }
                 }
 
-                // перевод в 10ю СС
-                //for (int i = 0; i < currentVariableTokensList.Count; i++)
-                //{
-                //    if (currentVariableTokensList[i] is DecimalToken)
-                //    {
-                //        var parts = currentVariableTokensList[i].Value.Split('.');
-
-                //        int leftPart = Convert.ToInt32(parts[0], 8);
-                //        int rightPart = Convert.ToInt32(parts[1], 8);
-
-                //        currentVariableTokensList[i] = new DecimalToken().GetTokenObject($"{leftPart}.{rightPart}",
-                //            currentVariableTokensList[i].Position);
-                //    }
-                //}
                 
                 // TODO: перевести из восьмиричной в десятичную
                 var result = CalculateVariableValue(currentVariableTokensList);
@@ -476,6 +462,65 @@ namespace LanguageLib.Analyzers.Implementation
 
         private bool AnalyzeOperators(ref List<IToken> tokens)
         {
+            // ":", "=" может быть в конце токенов
+            if (tokens[^1] is ColonToken || tokens[^1] is AssignToken)
+            {
+                Errors.Add(new SyntacticalError("Ожидалось объявление переменной", tokens[^1].Position));
+                return false;
+            }
+
+            // проверка одна ли переменная написана перед знаком "="
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                var token = tokens[i];
+
+                if (token is ColonToken)
+                {
+                    if (i + 1 < tokens.Count - 1)
+                    {
+                        if (tokens[i + 1] is not VariableToken)
+                        {
+                            Errors.Add(new SyntacticalError("Ожидалось название переменной", tokens[i + 1].Position));
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        Errors.Add(new SyntacticalError("Ожидалось название переменной", tokens[i + 1].Position));
+                        return false;
+                    }
+
+                    if (i + 2 < tokens.Count - 1)
+                    {
+                        if (tokens[i + 2] is not AssignToken)
+                        {
+                            Errors.Add(new SyntacticalError("Ожидалось название '='", tokens[i + 2].Position));
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        Errors.Add(new SyntacticalError("Ожидалось '='", token.Position + 2));
+                        return false;
+                    }
+                }
+            }
+
+            // могут быть 2 метки и ":", после ":" может быть не переменная
+            foreach (var token in tokens)
+            {
+                int tokenIndex = tokens.IndexOf(token);
+                if (tokenIndex + 1 < tokens.Count - 1)
+                {
+                    var nextToken = tokens[tokenIndex + 1];
+                    if (token is IntegerToken && nextToken is not ColonToken)
+                    {
+                        Errors.Add(new SyntacticalError("Ожидалась ':'", nextToken.Position));
+                        return false;
+                    }
+                }
+            }
+
             // проверка соответствия символам(sin, cos, tg, ctg, *, /, +, -, ^, переменные, метка:)
             for (int i = 0; i < tokens.Count; i++)
             {
@@ -521,7 +566,6 @@ namespace LanguageLib.Analyzers.Implementation
             }
 
             // переменная с одним именем может быть объявлена несколько раз
-            // TODO: реализовать
 
             // поиск индексов начала каждой переменной
             var variableStartIndexesList = new List<int>();
@@ -548,6 +592,8 @@ namespace LanguageLib.Analyzers.Implementation
                     variableStartIndexesList.Add(i);
                 }
             }
+
+            // TODO: проверить одна ли переменная объявлена
 
             //проверка токенов
             for (int tokenIndex = 0; tokenIndex < variableStartIndexesList.Count; tokenIndex++)
@@ -584,6 +630,36 @@ namespace LanguageLib.Analyzers.Implementation
                 for (int i = currentTokenIndex + 2; i <= nextVariableTokenIndex; i++)
                 {
                     currentVariableTokensList.Add(tokens[i]);
+                }
+
+
+                // последнее слово может быть функцией
+                if (TokenIsMathFunctionToken(currentVariableTokensList[currentVariableTokensList.Count - 1]))
+                {
+                    Errors.Add(new SyntacticalError("Последнее слово в определении переменной - функция, а ожидался ее аргумент", currentVariableTokensList[^1].Position));
+                    return false;
+                }
+
+                // последнее слово может быть математической операцией
+                if (TokenIsMathOperation(currentVariableTokensList[^1]))
+                {
+                    Errors.Add(new SyntacticalError("Последнее слово в определении переменной - математическая операция", currentVariableTokensList[^1].Position));
+                    return false;
+                }
+
+                // после вещественного числа может ничего не быть
+                foreach (var token in currentVariableTokensList)
+                {
+                    int _tokenIndex = currentVariableTokensList.IndexOf(token);
+                    if (_tokenIndex < currentVariableTokensList.Count - 1)
+                    {
+                        var nextToken = currentVariableTokensList[_tokenIndex + 1];
+                        if (token is DecimalToken && !TokenIsMathOperation(nextToken))
+                        {
+                            Errors.Add(new SyntacticalError("Ожидалась математическая операция", nextToken.Position));
+                            return false;
+                        }
+                    }
                 }
 
                 // в определении переменной могут быть либо другие переменные либо вещественные числа либо функции
@@ -629,51 +705,12 @@ namespace LanguageLib.Analyzers.Implementation
                 for (int i = currentTokenIndex + 2; i <= nextVariableTokenIndex; i++)
                 {
                     var token = tokens[i];
-                    
-                    // проверка дублирования математических операций(**, //, ^^, ++)
-                    if (TokenIsMathOperation(token))
+
+                    // проверка дублирования математических операций
+                    if (TokenIsMathOperation(token) && TokenIsMathOperation(tokens[i + 1]))
                     {
-                        var leftToken = tokens[i - 1];
-                        var rightToken = tokens[i + 1];
-
-                        // дублирование математических операций
-                        if ((TokenIsMathOperation(leftToken) || TokenIsMathOperation(rightToken)) && (leftToken.Type == token.Type || rightToken.Type == token.Type) &&
-                            (token.Type != TokenType.Minus))
-                        {
-                            Errors.Add(new SyntacticalError("Дублирование математических операций", token.Position));
-                            return false;
-                        }
-
-                        // если математические операции разные, кроме +-
-                        if (TokenIsMathOperation(leftToken) && leftToken.Type != TokenType.Plus &&
-                            token.Type != TokenType.Minus && token.Type != leftToken.Type)
-                        {
-                            Errors.Add(new SyntacticalError("Различные математические операции, разрешено '+-' ", token.Position));
-                            return false;
-                        }
-
-                        if (TokenIsMathOperation(rightToken) && rightToken.Type != TokenType.Minus &&
-                            token.Type != TokenType.Minus)
-                        {
-                            Errors.Add(new SyntacticalError("Различные математические операции, разрешено '+-' ", token.Position));
-                            return false;
-                        }
-                    }
-
-                    // проверка на то, что между математической операцией что-то есть
-
-                    if (TokenIsMathOperation(token) && i > 0 && i < tokens.Count - 1)
-                    {
-                        var leftToken = tokens[i - 1];
-                        var rightToken = tokens[i + 1];
-
-                        if (!TokenIsMathOperation(leftToken) && TokenIsMathFunctionToken(leftToken) &&
-                            leftToken is not DecimalToken && leftToken is not VariableToken && !(token is MinusToken && leftToken is AssignToken))
-                        {
-                            Errors.Add(new SyntacticalError("Ожидалась переменная, вещественное число, функция или математическая операция", leftToken.Position));
-                            return false;
-                        }
-
+                        Errors.Add(new SyntacticalError("Дублирование математических операций", token.Position));
+                        return false;
                     }
 
                     // проверка деления на 0 (предыдущее слово - "/")
@@ -914,6 +951,20 @@ namespace LanguageLib.Analyzers.Implementation
 
             #endregion
 
+            // проверка деления на 0
+            for (int i = 0; i < finallyTokensList.Count; i++)
+            {
+                if (finallyTokensList[i] is DivisionToken && i + 1 < tokens.Count - 1)
+                {
+                    var nextTokenValue = Convert.ToDecimal(finallyTokensList[i].Value);
+                    if (nextTokenValue == 0)
+                    {
+                        Errors.Add(new SyntacticalError("Присутствует деление на 0", finallyTokensList[i + 1].Position));
+                        return 0;
+                    }
+                }
+            }
+
             var computer = new DataTable();
             try
             {
@@ -935,7 +986,6 @@ namespace LanguageLib.Analyzers.Implementation
 
             return result;
         }
-
 
         public decimal CalculateMathFunctionTokens(List<IToken> tokens)
         {
