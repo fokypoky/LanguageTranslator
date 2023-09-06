@@ -52,6 +52,7 @@ namespace LanguageUI.WPF.ViewModels
             get => new RelayCommand((object parameter) =>
             {
                 Errors?.Clear();
+                Variables?.Clear();
 
                 if (String.IsNullOrEmpty(InputText))
                 {
