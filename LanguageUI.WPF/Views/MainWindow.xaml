@@ -77,10 +77,12 @@
             <TextBlock Grid.Row="0" Style="{StaticResource LanguageHeaderTextBlockStyle}"
                        Text="Язык"/>
             
-            <!--LANGUAGE DESCRIPTION-->
-            <TextBlock Grid.Row="1" Style="{StaticResource LanguageDescriptionTextBlockStyle}"
-                       Text="{Binding LanguageDescription}"/>
+            <ScrollViewer Grid.Row="1">
+                <!--LANGUAGE DESCRIPTION-->
+                <TextBlock  Style="{StaticResource LanguageDescriptionTextBlockStyle}"
+                           Text="{Binding LanguageDescription}"/>
 
+            </ScrollViewer>
         </Grid>
 
         <!--COMPUTE BUTTON-->
