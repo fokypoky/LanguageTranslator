@@ -85,6 +85,7 @@ namespace LanguageLib.Analyzers.Implementation
         {
             var cleanerStringBuilder = new StringBuilder(_text.ToLower());
             cleanerStringBuilder
+                .Replace("\n", " ").Replace("\r", " ").Replace("\t", " ")
                 .Replace(",", " , ")
                 .Replace(":", " : ")
                 .Replace("+", " + ").Replace("-", " - ")
