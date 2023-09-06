@@ -253,6 +253,8 @@ namespace LanguageLib.Analyzers.Implementation
             
         }
 
+        #region Analyzing
+
         private bool AnalyzeLinks(ref List<IToken> tokens)
         {
             // Звено = "First" Вещ ! "Second" Вещ... Вещ ! "Third" Цел ! "Fourth" Цел... Цел
@@ -719,7 +721,9 @@ namespace LanguageLib.Analyzers.Implementation
 
             return true;
         }
-
+        
+        #endregion
+        
         public decimal CalculateVariableValue(List<IToken> tokens)
         {
             decimal result = 0;
@@ -727,6 +731,18 @@ namespace LanguageLib.Analyzers.Implementation
             #region Функции
 
             var funcTokensSeries = new List<FuncTokensSeria>();
+
+            bool tokensContainFuncs = false;
+            foreach (var token in tokens)
+            {
+                if (token.Type == TokenType.Cos || token.Type == TokenType.Sin || token.Type == TokenType.Tg)
+                {
+                    tokensContainFuncs = true;
+                    break;
+                }
+            }
+
+
 
             for (int i = 0; i < tokens.Count; i++)
             {
@@ -736,6 +752,7 @@ namespace LanguageLib.Analyzers.Implementation
                     seria.StartIndex = i;
 
                     // поиск конца серии токенов
+                    // TODO: ошибка -  sin sin 20.0 + 10.0  - считает за серию, целиком
                     for (int j = i + 1; j < tokens.Count; j++)
                     {
                         var token = tokens[j];
@@ -750,39 +767,82 @@ namespace LanguageLib.Analyzers.Implementation
 
                         if (TokenIsMathFunctionToken(token))
                         {
-                            if (token is DecimalToken && (tokens[j + 1] is not ExpToken))
-                            {
-                                //funcTokensEndIndex = j;
-                                seria.EndIndex = j;
-                                i = j;
-                                funcTokensSeries.Add(seria);
-                                break;
-                            }
-
-                            if (token is PlusToken || token is MultiplyToken || token is DivisionToken)
-                            {
-                                //funcTokensEndIndex = j - 1;
-                                seria.EndIndex = j - 1;
-                                i = j - 1;
-                                funcTokensSeries.Add(seria);
-                                break;
-                            }
-
-                            // вышли за границы функций
-                            if (token is MinusToken && (tokens[j + 1] is not DecimalToken &&
-                                                        !TokenIsMathFunctionToken(tokens[j + 1])))
-                            {
-                                //funcTokensEndIndex = j - 1;
-                                seria.EndIndex = j - 1;
-                                i = j - 1;
-                                funcTokensSeries.Add(seria);
-                                break;
-                            }
-                        }
-                        else
-                        {
                             continue;
                         }
+
+                        if (token is DecimalToken && tokens[j + 1] is not ExpToken)
+                        {
+                            seria.EndIndex = j;
+                            i = j;
+                            funcTokensSeries.Add(seria);
+                            break;
+                        }
+
+                        if (token is MinusToken)
+                        {
+                            if (j - 1 >= 0 && !TokenIsMathFunctionToken(tokens[j - 1]))
+                            {
+                                seria.EndIndex = j - 1;
+                                i = j - 1;
+                                funcTokensSeries.Add(seria);
+                                break;
+                            }
+                        }
+
+                        //if (TokenIsMathFunctionToken(token))
+                        //{
+                        //    //if (token is DecimalToken && tokens[j + 1] is not ExpToken)
+                        //    //{
+                        //    //    seria.EndIndex = j;
+                        //    //    i = j;
+                        //    //    funcTokensSeries.Add(seria);
+                        //    //    break;
+                        //    //}
+
+                        //    if (!TokenIsMathFunctionToken(token) && token is not DecimalToken && token is not ExpToken)
+                        //    {
+                        //        if (j - 1 >= 0 && token is MinusToken && !TokenIsMathFunctionToken(tokens[j - 1]))
+                        //        {
+                        //            seria.EndIndex = j - 1;
+                        //            i = j - 1;
+                        //            funcTokensSeries.Add(seria);
+                        //            break;
+                        //        }
+                        //        seria.EndIndex = j;
+                        //        i = j;
+                        //        funcTokensSeries.Add(seria);
+                        //        break;
+                        //    }
+                        //    //if(TokenIsMathOperation(token) && )
+                        //    //if (token is DecimalToken && (tokens[j + 1] is not ExpToken))
+                        //    //{
+                        //    //    //funcTokensEndIndex = j;
+                        //    //    seria.EndIndex = j;
+                        //    //    i = j;
+                        //    //    funcTokensSeries.Add(seria);
+                        //    //    break;
+                        //    //}
+
+                        //    //if (token is PlusToken || token is MultiplyToken || token is DivisionToken)
+                        //    //{
+                        //    //    //funcTokensEndIndex = j - 1;
+                        //    //    seria.EndIndex = j - 1;
+                        //    //    i = j - 1;
+                        //    //    funcTokensSeries.Add(seria);
+                        //    //    break;
+                        //    //}
+
+                        //    //// вышли за границы функций
+                        //    //if (token is MinusToken && (tokens[j + 1] is not DecimalToken &&
+                        //    //                            !TokenIsMathFunctionToken(tokens[j + 1])))
+                        //    //{
+                        //    //    //funcTokensEndIndex = j - 1;
+                        //    //    seria.EndIndex = j - 1;
+                        //    //    i = j - 1;
+                        //    //    funcTokensSeries.Add(seria);
+                        //    //    break;
+                        //    //}
+                        //}
                     }
                 }
             }
